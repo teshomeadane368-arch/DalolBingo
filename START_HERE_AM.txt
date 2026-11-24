@@ -1,0 +1,12 @@
+DALOL BINGO — የመጀመሪያ መመሪያ
+
+1) ይህ የሙከራ (DEMO) ስሪት ነው፤ እውነተኛ ገንዘብ ማስገባት/ማውጣት ተዘግቷል።
+2) Python 3.10+ ይጫኑ።
+3) በዚህ ፎልደር ውስጥ terminal ከፍተው:
+   pip install -r requirements.txt
+4) BOT_TOKEN, ADMIN_ID, APP_URL, DB_PATH እንደ environment variables ያስገቡ።
+5) አፑን ለማስኬድ:
+   uvicorn server:app --host 0.0.0.0 --port 8000 --workers 1
+6) Telegram BotFather ውስጥ Menu Button / Web App URL ን APP_URL ያድርጉ።
+
+ማስታወሻ: APP_URL የራስዎ HTTPS የdeployment URL መሆን አለበት።

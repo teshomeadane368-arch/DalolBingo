@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="am">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>DALOL BINGO</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+:root{
+  --bg:#070b14;--card:#101727;--card2:#172035;--el:#1e2942;
+  --bd:rgba(255,255,255,.09);--bdg:rgba(245,158,11,.5);
+  --txt:#f8fafc;--mut:#94a3b8;--dim:#64748b;
+  --gold:#f59e0b;--gold2:#fbbf24;--ggrad:linear-gradient(135deg,#f59e0b,#fbbf24,#d97706);
+  --em:#10b981;--egrad:linear-gradient(135deg,#10b981,#059669);
+  --nav:rgba(11,16,29,.96);--sh:0 8px 22px rgba(0,0,0,.35);
+}
+body.light{
+  --bg:#f1f5f9;--card:#fff;--card2:#f8fafc;--el:#e2e8f0;
+  --bd:rgba(15,23,42,.1);--bdg:rgba(217,119,6,.5);
+  --txt:#0f172a;--mut:#475569;--dim:#64748b;
+  --nav:rgba(255,255,255,.97);--sh:0 6px 16px rgba(15,23,42,.08);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;user-select:none}
+html,body{min-height:100%;background:var(--bg);color:var(--txt);font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;overflow-x:hidden}
+.app{max-width:480px;margin:0 auto;min-height:100vh;padding-bottom:74px;position:relative}
+.hdr{position:sticky;top:0;z-index:40;display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--nav);backdrop-filter:blur(12px);border-bottom:1px solid var(--bd)}
+.brand{display:flex;align-items:center;gap:9px}
+.badge{width:34px;height:34px;border-radius:10px;background:var(--ggrad);display:flex;align-items:center;justify-content:center;font-size:18px;box-shadow:0 3px 12px rgba(245,158,11,.4)}
+.btitle{font-size:15px;font-weight:800;letter-spacing:.6px;color:var(--gold2)}
+body.light .btitle{color:#b45309}
+.live-pill{font-size:9px;font-weight:800;padding:2px 6px;border-radius:99px;background:rgba(16,185,129,.18);color:#34d399;border:1px solid rgba(16,185,129,.4)}
+.hact{display:flex;align-items:center;gap:8px}
+.ibtn{width:34px;height:34px;border-radius:50%;border:1px solid var(--bd);background:var(--card2);color:var(--txt);font-size:15px;cursor:pointer}
+.wchip{display:flex;align-items:center;gap:6px;padding:6px 12px;border-radius:99px;background:rgba(245,158,11,.15);border:1px solid var(--bdg);cursor:pointer;font-size:13px;font-weight:800;color:var(--gold2)}
+body.light .wchip{color:#b45309}
+.coin{width:18px;height:18px;border-radius:50%;background:var(--ggrad);color:#090d16;font-size:11px;display:inline-flex;align-items:center;justify-content:center}
+.tab{display:none;padding:10px 12px 16px}.tab.on{display:block}
+.srow4{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-bottom:10px}
+.srow3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px}
+.sbox{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:8px 5px;text-align:center;box-shadow:var(--sh)}
+.slbl{font-size:9.5px;font-weight:700;color:var(--mut);margin-bottom:3px}
+.sval{font-size:14.5px;font-weight:800}
+.c-gold{color:var(--gold2)}body.light .c-gold{color:#d97706}
+.c-em{color:var(--em)}.c-blue{color:#60a5fa}.c-red{color:#f87171}
+.status-banner{background:rgba(37,99,235,.14);border:1px solid rgba(59,130,246,.35);border-radius:12px;padding:9px 12px;margin-bottom:10px;text-align:center;font-size:12px;font-weight:700;color:#93c5fd}
+.status-banner.counting{background:rgba(245,158,11,.16);border-color:var(--bdg);color:var(--gold2)}
+body.light .status-banner{color:#1d4ed8}
+.sbar{display:flex;align-items:center;justify-content:space-between;gap:6px;margin-bottom:10px;background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:6px 8px}
+.spills{display:flex;gap:5px}
+.spill{padding:6px 10px;border-radius:8px;border:1px solid var(--bd);background:var(--card2);color:var(--mut);font-size:11px;font-weight:700;cursor:pointer}
+.spill.on{background:var(--ggrad);color:#090d16;border-color:transparent}
+.apill{padding:6px 9px;border-radius:8px;background:rgba(16,185,129,.15);border:1px solid rgba(16,185,129,.35);color:var(--em);font-size:10.5px;font-weight:700;cursor:pointer}
+.apill.off{background:var(--card2);border-color:var(--bd);color:var(--mut)}
+.lctrl{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.scnt{font-size:12.5px;font-weight:800;color:var(--gold2)}body.light .scnt{color:#b45309}
+.qbtn{padding:6px 11px;border-radius:9px;border:1px solid var(--bdg);background:var(--card2);color:var(--gold2);font-size:11.5px;font-weight:700;cursor:pointer}
+.leg{display:flex;justify-content:center;gap:14px;font-size:10.5px;color:var(--mut);margin-bottom:8px}
+.leg span{display:inline-flex;align-items:center;gap:5px}
+.dot{width:9px;height:9px;border-radius:3px;display:inline-block}
+.d-free{background:var(--el);border:1px solid var(--bd)}.d-taken{background:rgba(239,68,68,.7)}.d-mine{background:var(--gold)}
+.gwrap{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:8px;max-height:340px;overflow-y:auto;box-shadow:var(--sh);margin-bottom:10px}
+.cgrid{display:grid;grid-template-columns:repeat(8,1fr);gap:5px}
+.gnum{aspect-ratio:1/.9;border-radius:8px;background:var(--card2);border:1px solid var(--bd);display:flex;align-items:center;justify-content:center;font-size:11.5px;font-weight:700;cursor:pointer}
+.gnum.taken{background:rgba(239,68,68,.18);border-color:rgba(239,68,68,.4);color:#fca5a5}
+.gnum.sel{background:var(--ggrad);border-color:#fde68a;color:#090d16;font-weight:800;box-shadow:0 0 12px rgba(245,158,11,.55)}
+.pstrip{display:grid;grid-template-columns:repeat(auto-fit,minmax(105px,1fr));gap:7px}
+.mboard{background:var(--card);border:1.5px solid var(--bdg);border-radius:11px;padding:5px;box-shadow:var(--sh)}
+.mbh{display:flex;align-items:center;justify-content:space-between;background:var(--ggrad);color:#090d16;border-radius:6px;padding:2px 6px;font-size:9.5px;font-weight:800;margin-bottom:4px}
+.mbx{background:rgba(0,0,0,.18);border:none;color:#090d16;border-radius:4px;padding:0 5px;font-weight:800;cursor:pointer}
+.mgrid{display:grid;grid-template-columns:repeat(5,1fr);gap:2px}
+.mcell{aspect-ratio:1;border-radius:3px;background:var(--card2);display:flex;align-items:center;justify-content:center;font-size:8.5px;font-weight:700}
+.mcell.fr{background:#2563eb;color:#fff}
+.playlay{display:grid;grid-template-columns:38% 1fr;gap:9px;align-items:start}
+.mstr{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:6px 5px;box-shadow:var(--sh)}
+.bhdr{display:grid;grid-template-columns:repeat(5,1fr);gap:2px;margin-bottom:4px}
+.ch{text-align:center;font-size:10px;font-weight:800;padding:3px 0;border-radius:5px;color:#fff}
+.cB{background:#2563eb}.cI{background:#dc2626}.cN{background:#10b981}.cG{background:#d97706}.cO{background:#7c3aed}
+.mstgrid{display:grid;grid-template-columns:repeat(5,1fr);gap:2.5px}
+.mn{font-size:9.5px;font-weight:700;text-align:center;padding:3.5px 0;border-radius:4px;background:var(--card2);color:var(--mut)}
+.mn.cal{background:#2563eb;color:#fff;font-weight:800}
+.mn.lat{background:var(--ggrad);color:#090d16;box-shadow:0 0 9px rgba(251,191,36,.85)}
+.pright{display:flex;flex-direction:column;gap:9px;min-width:0}
+.cstage{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:10px;display:grid;grid-template-columns:1fr 54px;gap:8px;align-items:center;box-shadow:var(--sh)}
+.cbox{display:flex;flex-direction:column;align-items:center}
+.sttl{font-size:9.5px;font-weight:800;color:var(--mut);margin-bottom:6px}
+.ball{width:80px;height:80px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:900;color:#fff;border:2.5px solid rgba(255,255,255,.55);box-shadow:inset -5px -7px 14px rgba(0,0,0,.4),0 6px 18px rgba(0,0,0,.45)}
+.bB{background:radial-gradient(circle at 30% 28%,#60a5fa,#2563eb 65%,#1e3a8a)}
+.bI{background:radial-gradient(circle at 30% 28%,#f87171,#dc2626 65%,#7f1d1d)}
+.bN{background:radial-gradient(circle at 30% 28%,#34d399,#059669 65%,#064e3b)}
+.bG{background:radial-gradient(circle at 30% 28%,#fde047,#d97706 65%,#78350f)}
+.bO{background:radial-gradient(circle at 30% 28%,#c084fc,#7c3aed 65%,#4c1d95)}
+.bW{background:radial-gradient(circle at 30% 28%,#fbbf24,#d97706 70%,#78350f)}
+.pstack{display:flex;flex-direction:column;align-items:center;gap:5px}
+.pball{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10.5px;font-weight:800;color:#fff;border:1.5px solid rgba(255,255,255,.4)}
+.acards{display:flex;flex-direction:column;gap:9px;max-height:400px;overflow-y:auto}
+.spec{background:var(--card);border:1px dashed var(--bdg);border-radius:14px;padding:18px 12px;text-align:center;color:var(--mut);font-size:12.5px;line-height:1.6}
+.pcard{background:var(--card);border:1px solid var(--bd);border-radius:13px;padding:8px;box-shadow:var(--sh)}
+.pcard.win{border-color:var(--gold);box-shadow:0 0 18px rgba(245,158,11,.5)}
+.ptop{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;font-size:11.5px;font-weight:800;color:var(--gold2)}
+.pgrid{display:grid;grid-template-columns:repeat(5,1fr);gap:3.5px}
+.pc{aspect-ratio:1;border-radius:7px;background:var(--card2);border:1px solid var(--bd);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;cursor:pointer}
+.pc.fr{background:#2563eb;color:#fff;font-size:9.5px}
+.pc.mk{background:var(--ggrad);color:#090d16;border-color:#fef08a}
+.pc.cu{border-color:rgba(251,191,36,.8)}
+.cbtn{width:100%;margin-top:8px;padding:11px;border-radius:10px;border:none;background:var(--ggrad);color:#090d16;font-size:14px;font-weight:900;cursor:pointer;box-shadow:0 4px 16px rgba(245,158,11,.55)}
+.scard{background:var(--card);border:1px solid var(--bd);border-radius:16px;padding:14px;margin-bottom:12px;box-shadow:var(--sh)}
+.shd{display:flex;align-items:center;justify-content:space-between;font-size:13.5px;font-weight:800;margin-bottom:10px}
+.rinp{width:100%;padding:11px 12px;border-radius:11px;border:1px solid var(--bd);background:var(--card2);color:var(--txt);font-size:13px;outline:none}
+.btnp{padding:11px 16px;border-radius:11px;border:none;background:#2563eb;color:#fff;font-size:13px;font-weight:800;cursor:pointer}
+.wdual{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+.wsub{background:var(--card2);border:1px solid var(--bd);border-radius:13px;padding:12px 10px;text-align:center}
+.wsub .l{font-size:10.5px;color:var(--mut);font-weight:700;margin-bottom:5px}
+.wsub .a{font-size:20px;font-weight:900;margin-bottom:3px}
+.wsub .h{font-size:10px;color:var(--dim)}
+.wact{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.btnd{padding:12px;border-radius:12px;border:none;background:var(--egrad);color:#fff;font-size:13px;font-weight:800;cursor:pointer}
+.btnw{padding:12px;border-radius:12px;border:none;background:var(--ggrad);color:#090d16;font-size:13px;font-weight:800;cursor:pointer}
+.drw{display:none;margin-top:12px;padding-top:12px;border-top:1px solid var(--bd)}.drw.on{display:block}
+.abox{background:var(--card2);border:1px solid var(--bdg);border-radius:12px;padding:12px;margin-bottom:10px}
+.arow{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;font-size:13.5px}
+.cmini{padding:5px 10px;border-radius:7px;border:none;background:var(--ggrad);color:#090d16;font-size:11px;font-weight:800;cursor:pointer}
+.fstack{display:flex;flex-direction:column;gap:9px}
+.hitem,.rrow{display:flex;align-items:center;justify-content:space-between;padding:11px 12px;background:var(--card);border:1px solid var(--bd);border-radius:13px;margin-bottom:8px}
+.rrow.t1{border-color:var(--bdg);background:linear-gradient(90deg,rgba(245,158,11,.15),var(--card))}
+.hl{display:flex;align-items:center;gap:10px}
+.hico{width:34px;height:34px;border-radius:10px;background:var(--card2);display:flex;align-items:center;justify-content:center;font-size:15px}
+.irow{display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--bd);font-size:13px}
+.irow:last-child{border-bottom:none}
+.tgrid{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.tbtn{padding:11px;border-radius:11px;border:1px solid var(--bd);background:var(--card2);color:var(--txt);font-size:13px;font-weight:700;cursor:pointer}
+.tbtn.on{border-color:var(--gold);background:rgba(245,158,11,.16);color:var(--gold2)}
+.bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;z-index:50;display:grid;grid-template-columns:repeat(5,1fr);background:var(--nav);border-top:1px solid var(--bd);padding:7px 4px}
+.nbtn{border:none;background:transparent;color:var(--mut);display:flex;flex-direction:column;align-items:center;gap:3px;font-size:9.5px;font-weight:700;cursor:pointer;padding:4px 2px;border-radius:10px}
+.nbtn .ni{font-size:18px;line-height:1}.nbtn.on{color:var(--gold2);background:rgba(245,158,11,.12)}
+.wov{position:fixed;inset:0;z-index:90;background:rgba(5,8,17,.94);display:none;flex-direction:column;align-items:center;justify-content:center;padding:20px}
+.wov.on{display:flex}
+.wcard{width:100%;max-width:340px;text-align:center}
+.wttl{font-size:30px;font-weight:900;color:#fbbf24;margin-bottom:6px}
+.wnm{font-size:18px;font-weight:800;color:#fde68a;margin-bottom:4px}
+.wprz{font-size:24px;font-weight:900;color:#34d399;margin-bottom:14px}
+.wbox{background:#0f172a;border:2px solid #fbbf24;border-radius:16px;padding:12px;margin-bottom:14px}
+.wgrd{display:grid;grid-template-columns:repeat(5,1fr);gap:5px;margin-top:8px}
+.wc{aspect-ratio:1;border-radius:8px;background:#1e293b;color:#e2e8f0;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800}
+.wc.cal{background:#2563eb;color:#fff}.wc.wl{background:var(--ggrad);color:#090d16}
+.toast{position:fixed;top:62px;left:50%;transform:translateX(-50%);z-index:100;background:#0f172a;color:#fff;border:1px solid var(--bdg);padding:9px 16px;border-radius:99px;font-size:12.5px;font-weight:700;display:none;max-width:90%;text-align:center}
+.toast.on{display:block}
+.auth-err{padding:40px 20px;text-align:center;line-height:1.7}
+</style>
+</head>
+<body>
+<div id="toast" class="toast"></div>
+<div id="authGuard" class="auth-err" style="display:none">
+  <div style="font-size:48px;margin-bottom:10px">👑</div>
+  <h2 style="color:var(--gold2);margin-bottom:8px">DALOL BINGO</h2>
+  <p style="color:var(--mut);font-size:14px">ይህ ጨዋታ የሚሰራው በቴሌግራም ቦቱ ውስጥ ብቻ ነው። እባክዎ ወደ ቴሌግራም ተመልሰው <strong>Play Dalol Bingo</strong> ቁልፍን ይጫኑ።</p>
+</div>
+
+<div id="appRoot" class="app">
+  <header class="hdr">
+    <div class="brand">
+      <div class="badge">👑</div>
+      <div>
+        <div class="btitle">DALOL BINGO</div>
+        <span class="live-pill">● DEMO MODE</span>
+      </div>
+    </div>
+    <div class="hact">
+      <button id="sndBtn" class="ibtn" onclick="toggleSound()">🔊</button>
+      <div class="wchip" onclick="goTab('wallet')"><span class="coin">₵</span><span id="hBal">0.00</span></div>
+    </div>
+  </header>
+
+  <section id="tab-bingo" class="tab on">
+    <div id="lobbyView">
+      <div class="srow4">
+        <div class="sbox"><div class="slbl">WALLET</div><div id="lWal" class="sval c-em">0.00</div></div>
+        <div class="sbox"><div class="slbl">DERASH</div><div id="lDer" class="sval c-gold">0</div></div>
+        <div class="sbox"><div class="slbl">PLAYERS</div><div id="lPly" class="sval c-blue">0</div></div>
+        <div class="sbox"><div class="slbl">STATUS</div><div id="lTmr" class="sval">WAIT</div></div>
+      </div>
+
+      <div id="statusBanner" class="status-banner">⏳ እውነተኛ ተጫዋቾች በመጠበቅ ላይ... (ቢያንስ 2 ሰው ሲገባ ይጀምራል)</div>
+
+      <div class="sbar">
+        <div class="spills">
+          <button class="spill on" data-s="10" onclick="setStake(10)">10 ነጥብ</button>
+          <button class="spill" data-s="20" onclick="setStake(20)">20 ነጥብ</button>
+          <button class="spill" data-s="50" onclick="setStake(50)">50 ነጥብ</button>
+        </div>
+        <button id="autoBtn" class="apill" onclick="toggleAuto()">⚡ Auto-Mark: ON</button>
+      </div>
+
+      <div class="lctrl">
+        <div id="selLbl" class="scnt">ካርዶችዎ፡ 0 / 4</div>
+        <button class="qbtn" onclick="quickPick()">🎴 በፍጥነት +1 ምረጥ</button>
+      </div>
+
+      <div class="leg">
+        <span><i class="dot d-free"></i> ነፃ</span>
+        <span><i class="dot d-taken"></i> በሌላ የተያዘ</span>
+        <span><i class="dot d-mine"></i> የእርስዎ</span>
+      </div>
+
+      <div class="gwrap"><div id="selGrid" class="cgrid"></div></div>
+      <div id="miniStrip" class="pstrip"></div>
+    </div>
+
+    <div id="playView" style="display:none">
+      <div class="srow3">
+        <div class="sbox"><div class="slbl">DERASH</div><div id="pDer" class="sval c-gold">0</div></div>
+        <div class="sbox"><div class="slbl">PLAYERS</div><div id="pPly" class="sval c-blue">0</div></div>
+        <div class="sbox"><div class="slbl">CALLS</div><div id="pCal" class="sval">0</div></div>
+      </div>
+      <div class="playlay">
+        <div class="mstr">
+          <div class="bhdr"><div class="ch cB">B</div><div class="ch cI">I</div><div class="ch cN">N</div><div class="ch cG">G</div><div class="ch cO">O</div></div>
+          <div id="mstGrid" class="mstgrid"></div>
+        </div>
+        <div class="pright">
+          <div class="cstage">
+            <div class="cbox"><div class="sttl">CURRENT CALL</div><div id="curBall" class="ball bW">--</div></div>
+            <div class="pstack"><div class="sttl" style="margin-bottom:2px">PREV</div><div id="prvBalls"></div></div>
+          </div>
+          <div id="actCards" class="acards"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="tab-wallet" class="tab">
+    <div class="scard">
+      <div class="shd"><span>💼 የሂሳብ ማጠቃለያ (Demo Wallet)</span></div>
+      <div class="wdual">
+        <div class="wsub"><div class="l">🎮 PLAY WALLET</div><div id="pwVal" class="a c-em">0.00</div><div class="h">ለመጫወቻ</div></div>
+        <div class="wsub"><div class="l">🏆 WIN WALLET</div><div id="wwVal" class="a c-gold">0.00</div><div class="h">የሙከራ ነጥቦች</div></div>
+      </div>
+      <div class="spec">🧪 <strong>DEMO MODE</strong><br/>ይህ ስሪት ለሙከራ ነው። እውነተኛ ገንዘብ ማስገባት ወይም ማውጣት አይቻልም። የሙከራ ነጥቦችን አድሚን ብቻ ይመድባል።</div>
+    </div>
+  </section>
+
+  <section id="tab-history" class="tab">
+    <div class="shd"><span>📜 የነጥብና ጨዋታ ታሪክ</span></div>
+    <div id="hList"></div>
+  </section>
+
+  <section id="tab-rank" class="tab">
+    <div class="shd"><span>🏆 ከፍተኛ አሸናፊዎች</span></div>
+    <div id="rList"></div>
+  </section>
+
+  <section id="tab-profile" class="tab">
+    <div class="scard">
+      <div class="shd"><span>👤 የተጠቃሚ መገለጫ</span></div>
+      <div class="irow"><span style="color:var(--mut)">ስም፦</span><strong id="prName" class="c-gold">-</strong></div>
+      <div class="irow"><span style="color:var(--mut)">መለያ ID፦</span><strong id="prId">-</strong></div>
+      <div class="irow"><span style="color:var(--mut)">የተጫወቱት ጨዋታ፦</span><strong id="prPly">0</strong></div>
+      <div class="irow"><span style="color:var(--mut)">ያሸነፉት ጨዋታ፦</span><strong id="prWin" class="c-em">0</strong></div>
+      <div class="irow"><span style="color:var(--mut)">ድጋፍ (Support)፦</span><strong id="prSup" class="c-blue">@your_support_username</strong></div>
+    </div>
+    <div class="scard">
+      <div class="shd"><span>🎨 ገጽታ (Theme)</span></div>
+      <div class="tgrid">
+        <button id="dkBtn" class="tbtn on" onclick="setThm('dark')">🌙 Dark Mode</button>
+        <button id="ltBtn" class="tbtn" onclick="setThm('light')">☀️ Light Mode</button>
+      </div>
+    </div>
+  </section>
+
+  <nav class="bnav">
+    <button class="nbtn on" data-t="bingo" onclick="goTab('bingo')"><span class="ni">🎮</span><span>BINGO</span></button>
+    <button class="nbtn" data-t="wallet" onclick="goTab('wallet')"><span class="ni">👛</span><span>WALLET</span></button>
+    <button class="nbtn" data-t="history" onclick="goTab('history')"><span class="ni">🕒</span><span>HISTORY</span></button>
+    <button class="nbtn" data-t="rank" onclick="goTab('rank')"><span class="ni">🏆</span><span>RANK</span></button>
+    <button class="nbtn" data-t="profile" onclick="goTab('profile')"><span class="ni">👤</span><span>PROFILE</span></button>
+  </nav>
+</div>
+
+<div id="winOv" class="wov">
+  <div class="wcard">
+    <div class="wttl">🏆 BINGO! 🏆</div>
+    <div id="wName" class="wnm">👑 Winner</div>
+    <div id="wPrz" class="wprz">0 POINTS</div>
+    <div class="wbox">
+      <div id="wLbl" style="font-size:12px;font-weight:800;color:#fbbf24">CARD</div>
+      <div id="wGrd" class="wgrd"></div>
+    </div>
+    <div style="color:#cbd5e1;font-size:13px;font-weight:700">አዲስ ዙር በ...</div>
+    <div id="nxtTmr" style="font-size:28px;font-weight:900;color:#fbbf24">10</div>
+  </div>
+</div>
+
+<script>
+var tg = (window.Telegram && window.Telegram.WebApp) ? window.Telegram.WebApp : null;
+var initData = '';
+if (tg) {
+  try { tg.ready(); tg.expand(); initData = tg.initData || ''; } catch (e) {}
+}
+
+var stake = 10, soundOn = true, autoMark = true;
+var lastCalledBall = null, lastWinnerCard = null, manualMarks = {};
+var latestState = null, busy = false, tTmr = null;
+var voiceAudio = new Audio(), actx = null;
+
+function ensureAudioUnlocked() {
+  if (!soundOn) return;
+  try {
+    var AC = window.AudioContext || window.webkitAudioContext;
+    if (AC) {
+      if (!actx) actx = new AC();
+      if (actx.state === 'suspended') actx.resume().catch(function() {});
+    }
+  } catch (e) {}
+}
+
+function beep(f, d) {
+  if (!soundOn) return;
+  try {
+    var AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return;
+    if (!actx) actx = new AC();
+    if (actx.state === 'suspended') actx.resume();
+    var o = actx.createOscillator(), g = actx.createGain();
+    o.frequency.setValueAtTime(f, actx.currentTime);
+    g.gain.setValueAtTime(0.14, actx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, actx.currentTime + (d || 0.14));
+    o.connect(g); g.connect(actx.destination);
+    o.start(); o.stop(actx.currentTime + (d || 0.14));
+  } catch (e) {}
+}
+
+function speakText(txt, freq) {
+  beep(freq || 660, 0.14);
+  if ('speechSynthesis' in window) {
+    try {
+      window.speechSynthesis.cancel();
+      var u = new SpeechSynthesisUtterance(String(txt));
+      u.lang = 'am-ET';
+      u.rate = 0.95;
+      u.volume = 1.0;
+      u.onerror = function() {
+        try {
+          var u2 = new SpeechSynthesisUtterance(String(txt));
+          u2.lang = 'en-US';
+          u2.rate = 0.95;
+          window.speechSynthesis.speak(u2);
+        } catch (e2) {}
+      };
+      window.speechSynthesis.speak(u);
+    } catch (e) {}
+  }
+}
+
+function playVoice(file, fallbackTxt, freq) {
+  if (!soundOn) return;
+  ensureAudioUnlocked();
+  try {
+    voiceAudio.pause();
+    voiceAudio.currentTime = 0;
+    voiceAudio.volume = 1.0;
+    voiceAudio.src = '/sounds/' + file + '.mp3';
+    var p = voiceAudio.play();
+    if (p && p.catch) {
+      p.catch(function() {
+        speakText(fallbackTxt, freq);
+      });
+    }
+  } catch (e) {
+    speakText(fallbackTxt, freq);
+  }
+}
+
+document.addEventListener('pointerdown', function() {
+  ensureAudioUnlocked();
+}, { passive: true });
+
+function toast(m) {
+  var el = document.getElementById('toast');
+  el.textContent = m;
+  el.classList.add('on');
+  clearTimeout(tTmr);
+  tTmr = setTimeout(function() { el.classList.remove('on'); }, 2600);
+}
+
+function getLtr(n) { return n <= 15 ? 'B' : n <= 30 ? 'I' : n <= 45 ? 'N' : n <= 60 ? 'G' : 'O'; }
+
+async function apiReq(url, method, body) {
+  var opts = {
+    method: method || 'GET',
+    headers: { 'Content-Type': 'application/json', 'X-Tg-Init-Data': initData }
+  };
+  if (body) opts.body = JSON.stringify(body);
+  var res = await fetch(url, opts);
+  var data = await res.json().catch(function() { return {}; });
+  if (!res.ok) {
+    if (res.status === 401) {
+      document.getElementById('appRoot').style.display = 'none';
+      document.getElementById('authGuard').style.display = 'block';
+    }
+    throw new Error(data.detail || 'ስህተት ተፈጥሯል');
+  }
+  return data;
+}
+
+function checkWinLocal(grid, markMap) {
+  var ls = [[0,1,2,3,4],[5,6,7,8,9],[10,11,12,13,14],[15,16,17,18,19],[20,21,22,23,24],[0,5,10,15,20],[1,6,11,16,21],[2,7,12,17,22],[3,8,13,18,23],[4,9,14,19,24],[0,6,12,18,24],[4,8,12,16,20],[0,4,20,24]];
+  for (var i = 0; i < ls.length; i++) {
+    var ok = true;
+    for (var j = 0; j < ls[i].length; j++) {
+      var v = grid[ls[i][j]];
+      if (v !== 'FREE' && !markMap[v]) { ok = false; break; }
+    }
+    if (ok) return ls[i];
+  }
+  return null;
+}
+
+function renderState(d) {
+  latestState = d;
+  var u = d.user, r = d.room, cfg = d.config;
+  document.getElementById('hBal').textContent = (u.play_wallet + u.win_wallet).toFixed(2);
+  document.getElementById('lWal').textContent = u.play_wallet.toFixed(2);
+  document.getElementById('pwVal').textContent = u.play_wallet.toFixed(2);
+  document.getElementById('wwVal').textContent = u.win_wallet.toFixed(2);
+  document.getElementById('prName').textContent = u.name;
+  document.getElementById('prId').textContent = u.uid;
+  document.getElementById('prPly').textContent = u.matches_played;
+  document.getElementById('prWin').textContent = u.wins;
+  document.getElementById('prSup').textContent = cfg.support;
+
+  if (r.phase === 'WAITING' || r.phase === 'COUNTDOWN') {
+    document.getElementById('winOv').classList.remove('on');
+    document.getElementById('playView').style.display = 'none';
+    document.getElementById('lobbyView').style.display = 'block';
+    lastCalledBall = null;
+    lastWinnerCard = null;
+    manualMarks = {};
+
+    document.getElementById('lDer').textContent = r.derash;
+    document.getElementById('lPly').textContent = r.players + '/' + r.min_players;
+    var tEl = document.getElementById('lTmr');
+    var ban = document.getElementById('statusBanner');
+    if (r.phase === 'WAITING') {
+      tEl.textContent = 'WAIT';
+      tEl.className = 'sval c-blue';
+      ban.className = 'status-banner';
+      ban.textContent = '⏳ ተጫዋቾች በመጠበቅ ላይ (' + r.players + ' / ' + r.min_players + ' ሰው) — ቢያንስ ' + r.min_players + ' ተጫዋቾች ካርድ ሲገዙ ይጀምራል';
+    } else {
+      tEl.textContent = r.countdown + 's';
+      tEl.className = 'sval' + (r.countdown <= 5 ? ' c-red' : ' c-gold');
+      ban.className = 'status-banner counting';
+      ban.textContent = '🔥 ጨዋታው በ ' + r.countdown + ' ሰከንድ ውስጥ ይጀምራል! ካርድ ይምረጡ';
+    }
+
+    document.getElementById('selLbl').textContent = 'ካርዶችዎ፡ ' + r.my_cards.length + ' / 4';
+    var tkMap = {}, myMap = {};
+    r.taken_cards.forEach(function(n) { tkMap[n] = true; });
+    r.my_cards.forEach(function(n) { myMap[n] = true; });
+    var gh = '';
+    for (var i = 1; i <= 400; i++) {
+      var cls = myMap[i] ? 'sel' : (tkMap[i] ? 'taken' : '');
+      gh += '<div class="gnum ' + cls + '" onclick="buyCard(' + i + ')">' + i + '</div>';
+    }
+    document.getElementById('selGrid').innerHTML = gh;
+
+    var ms = document.getElementById('miniStrip');
+    if (!r.my_cards.length) {
+      ms.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:10px;font-size:12px;color:var(--mut);background:var(--card);border-radius:11px;border:1px dashed var(--bd)">ካርድ ለመግዛት መጀመሪያ Play Wallet ላይ ነጥብ ያስገቡና ከ 1–400 ቁጥር ይንኩ</div>';
+    } else {
+      ms.innerHTML = r.my_cards.map(function(no) {
+        var g = r.my_boards[String(no)] || [];
+        return '<div class="mboard"><div class="mbh"><span>BOARD ' + no + '</span><button class="mbx" onclick="buyCard(' + no + ')">✕</button></div><div class="mgrid">' + g.map(function(v) { return '<div class="mcell ' + (v === 'FREE' ? 'fr' : '') + '">' + (v === 'FREE' ? 'F' : v) + '</div>'; }).join('') + '</div></div>';
+      }).join('');
+    }
+  } else if (r.phase === 'PLAYING' || r.phase === 'WINNER') {
+    document.getElementById('lobbyView').style.display = 'none';
+    document.getElementById('playView').style.display = 'block';
+    document.getElementById('pDer').textContent = r.derash;
+    document.getElementById('pPly').textContent = r.players;
+    document.getElementById('pCal').textContent = r.called.length;
+
+    var calMap = {};
+    r.called.forEach(function(n) { calMap[n] = true; });
+    var cur = r.called.length ? r.called[0] : null;
+    if (cur && cur !== lastCalledBall) {
+      lastCalledBall = cur;
+      playVoice(String(cur), getLtr(cur) + ' ' + cur, 520 + (cur % 15) * 18);
+    }
+
+    var mh = '';
+    for (var row = 0; row < 15; row++) {
+      for (var col = 0; col < 5; col++) {
+        var num = col * 15 + (row + 1);
+        var cls = (num === cur) ? 'cal lat' : (calMap[num] ? 'cal' : '');
+        mh += '<div class="mn ' + cls + '">' + num + '</div>';
+      }
+    }
+    document.getElementById('mstGrid').innerHTML = mh;
+
+    var cb = document.getElementById('curBall');
+    if (cur) {
+      cb.className = 'ball b' + getLtr(cur);
+      cb.textContent = getLtr(cur) + '-' + cur;
+    } else {
+      cb.className = 'ball bW';
+      cb.textContent = '--';
+    }
+    document.getElementById('prvBalls').innerHTML = r.called.slice(1, 4).map(function(p) {
+      return '<div class="pball b' + getLtr(p) + '">' + getLtr(p) + '-' + p + '</div>';
+    }).join('');
+
+    var ac = document.getElementById('actCards');
+    if (!r.my_cards.length) {
+      ac.innerHTML = '<div class="spec"><div style="font-size:24px;margin-bottom:6px">👀</div><strong>በዚህ ዙር ካርድ አልገዙም።</strong><br/>ጨዋታው ሲጠናቀቅ በቀጣዩ ዙር ይሳተፉ።</div>';
+    } else {
+      ac.innerHTML = r.my_cards.map(function(no) {
+        var g = r.my_boards[String(no)] || [];
+        var mk = autoMark ? calMap : (manualMarks[no] || {});
+        var wl = checkWinLocal(g, calMap);
+        return '<div class="pcard ' + (wl ? 'win' : '') + '"><div class="ptop"><span>CARD #' + no + '</span><span>' + r.stake + ' POINTS</span></div><div class="bhdr"><div class="ch cB">B</div><div class="ch cI">I</div><div class="ch cN">N</div><div class="ch cG">G</div><div class="ch cO">O</div></div><div class="pgrid">' + g.map(function(v) {
+          var isF = v === 'FREE', isM = !isF && mk[v], isCU = !isF && !isM && calMap[v];
+          var c = isF ? 'fr' : isM ? 'mk' : isCU ? 'cu' : '';
+          return '<div class="pc ' + c + '" onclick="tapManual(' + no + ',' + (isF ? "'FREE'" : v) + ')">' + v + '</div>';
+        }).join('') + '</div>' + (wl && r.phase === 'PLAYING' ? '<button class="cbtn" onclick="claimBingo(' + no + ')">🏆 BINGO! አሸንፈዋል — ይጫኑ</button>' : '') + '</div>';
+      }).join('');
+    }
+
+    if (r.phase === 'WINNER' && r.winner) {
+      var w = r.winner;
+      if (lastWinnerCard !== w.card_no) {
+        lastWinnerCard = w.card_no;
+        playVoice('bingo', 'Bingo!', 880);
+      }
+      document.getElementById('wName').textContent = '👑 ' + w.name + ' #' + w.card_no;
+      document.getElementById('wPrz').textContent = w.prize + ' POINTS';
+      document.getElementById('wLbl').textContent = w.name + ' (CARD #' + w.card_no + ')';
+      document.getElementById('wGrd').innerHTML = w.grid.map(function(v, idx) {
+        var c = w.win_line.indexOf(idx) > -1 ? 'wl' : (v === 'FREE' || calMap[v]) ? 'cal' : '';
+        return '<div class="wc ' + c + '">' + v + '</div>';
+      }).join('');
+      document.getElementById('nxtTmr').textContent = r.winner_left;
+      document.getElementById('winOv').classList.add('on');
+    } else {
+      document.getElementById('winOv').classList.remove('on');
+    }
+  }
+
+  var hl = document.getElementById('hList');
+  if (!d.history.length) {
+    hl.innerHTML = '<div class="scard" style="text-align:center;color:var(--mut)">ምንም ታሪክ የለም።</div>';
+  } else {
+    hl.innerHTML = d.history.map(function(x) {
+      var dt = new Date(x.created_at * 1000);
+      var tm = String(dt.getHours()).padStart(2,'0') + ':' + String(dt.getMinutes()).padStart(2,'0');
+      var pos = x.amount >= 0;
+      return '<div class="hitem"><div class="hl"><div class="hico">' + x.icon + '</div><div><div style="font-size:13px;font-weight:700">' + x.title + '</div><div style="font-size:10.5px;color:var(--mut)">' + tm + '</div></div></div><div style="font-size:13px;font-weight:800;color:' + (pos ? 'var(--em)' : '#f87171') + '">' + (pos ? '+' : '') + x.amount.toFixed(2) + ' POINTS</div></div>';
+    }).join('');
+  }
+
+  var rl = document.getElementById('rList');
+  if (!d.rank.length) {
+    rl.innerHTML = '<div class="scard" style="text-align:center;color:var(--mut)">ገና አሸናፊ አልተመዘገበም — የመጀመሪያው አሸናፊ ይሁኑ!</div>';
+  } else {
+    var md = ['🥇','🥈','🥉'];
+    rl.innerHTML = d.rank.map(function(x, i) {
+      return '<div class="rrow ' + (i === 0 ? 't1' : '') + '"><div class="hl"><div class="hico" style="font-weight:800">' + (i < 3 ? md[i] : (i + 1)) + '</div><div style="font-size:13.5px;font-weight:700">' + x.name + '</div></div><div class="c-gold" style="font-size:13.5px;font-weight:800">' + x.total_won.toFixed(2) + ' POINTS</div></div>';
+    }).join('');
+  }
+}
+
+async function pollState() {
+  if (!initData) {
+    document.getElementById('appRoot').style.display = 'none';
+    document.getElementById('authGuard').style.display = 'block';
+    return;
+  }
+  try {
+    var data = await apiReq('/api/state?stake=' + stake);
+    renderState(data);
+  } catch (e) {}
+}
+
+async function buyCard(no) {
+  if (busy) return;
+  busy = true;
+  ensureAudioUnlocked();
+  try {
+    var res = await apiReq('/api/buy_card', 'POST', { stake: stake, card_no: no });
+    beep(res.action === 'bought' ? 680 : 400, 0.08);
+    toast(res.action === 'bought' ? '✅ ካርድ #' + no + ' ተገዝቷል!' : '↩️ ካርድ #' + no + ' ተሰርዟል፤ ብሩ ተመልሷል።');
+    await pollState();
+  } catch (e) { toast('❌ ' + e.message); }
+  busy = false;
+}
+
+async function quickPick() {
+  if (!latestState) return;
+  var r = latestState.room;
+  var used = {};
+  r.taken_cards.forEach(function(n) { used[n] = true; });
+  r.my_cards.forEach(function(n) { used[n] = true; });
+  var free = [];
+  for (var i = 1; i <= 400; i++) { if (!used[i]) free.push(i); }
+  if (!free.length) { toast('ነፃ ካርድ የለም!'); return; }
+  var pick = free[Math.floor(Math.random() * free.length)];
+  await buyCard(pick);
+}
+
+function tapManual(no, v) {
+  if (v === 'FREE' || autoMark) return;
+  if (!manualMarks[no]) manualMarks[no] = {};
+  manualMarks[no][v] = true;
+  beep(840, 0.07);
+  if (latestState) renderState(latestState);
+}
+
+async function claimBingo(no) {
+  if (busy) return;
+  busy = true;
+  try {
+    var res = await apiReq('/api/claim_bingo', 'POST', { stake: stake, card_no: no });
+    toast('🏆 እንኳን ደስ አለዎት! ' + res.prize + ' POINTS አሸንፈዋል!');
+    await pollState();
+  } catch (e) { toast('❌ ' + e.message); }
+  busy = false;
+}
+
+async function winToPlay() {
+  try {
+    var res = await apiReq('/api/transfer', 'POST', {});
+    toast('✅ ' + res.amount.toFixed(2) + ' POINTS ወደ Play Wallet ተዛውሯል!');
+    await pollState();
+  } catch (e) { toast('❌ ' + e.message); }
+}
+
+
+function setStake(s) {
+  stake = s;
+  document.querySelectorAll('.spill').forEach(function(b) { b.classList.toggle('on', Number(b.getAttribute('data-s')) === s); });
+  pollState();
+}
+function toggleSound() {
+  soundOn = !soundOn;
+  document.getElementById('sndBtn').textContent = soundOn ? '🔊' : '🔇';
+  if (soundOn) {
+    ensureAudioUnlocked();
+    speakText('ድምፅ በርቷል', 740);
+  } else {
+    toast('ድምፅ ጠፍቷል 🔇');
+  }
+}
+function toggleAuto() {
+  autoMark = !autoMark;
+  var b = document.getElementById('autoBtn');
+  b.textContent = autoMark ? '⚡ Auto-Mark: ON' : '✋ Manual Mark';
+  b.classList.toggle('off', !autoMark);
+  if (latestState) renderState(latestState);
+}
+function goTab(t) {
+  document.querySelectorAll('.tab').forEach(function(e) { e.classList.remove('on'); });
+  document.querySelectorAll('.nbtn').forEach(function(e) { e.classList.remove('on'); });
+  document.getElementById('tab-' + t).classList.add('on');
+  document.querySelector('.nbtn[data-t="' + t + '"]').classList.add('on');
+}
+function openDrw(w) {
+  var d = document.getElementById('depDrw'), wd = document.getElementById('wdDrw');
+  if (w === 'dep') { d.classList.toggle('on'); wd.classList.remove('on'); }
+  else { wd.classList.toggle('on'); d.classList.remove('on'); }
+}
+function setThm(t) {
+  document.body.classList.toggle('light', t === 'light');
+  document.getElementById('dkBtn').classList.toggle('on', t === 'dark');
+  document.getElementById('ltBtn').classList.toggle('on', t === 'light');
+}
+function cpTxt(t, m) {
+  if (navigator.clipboard) navigator.clipboard.writeText(t).catch(function() {});
+  toast(m || 'ተቀድቷል!');
+}
+
+pollState();
+setInterval(pollState, 1200);
+</script>
+</body>
+</html>
