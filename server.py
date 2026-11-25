@@ -211,7 +211,7 @@ def play_kb(lbl='🎲 Play Dalol Bingo'):
 def adm_kb():
   kb = IKB()
   kb.row(IBtn('📊 ሪፖርትና ትርፍ', callback_data='adm_stats'), IBtn('👥 ተጫዋቾች', callback_data='adm_users'))
-  kb.row(IBtn('➕ ነጥብ ጨምር', callback_data='adm_add'), IBtn('➖ ነጥብ ቀንስ', callback_data='adm_sub'))
+  kb.row(IBtn('➕ ብር ጨምር', callback_data='adm_add'), IBtn('➖ ብር ቀንስ', callback_data='adm_sub'))
   kb.row(IBtn(f'⚙️ ዝቅተኛ ተጫዋች: {MIN_PLAYERS}', callback_data='adm_minp'), IBtn('💾 DB Backup', callback_data='adm_backup'))
   kb.row(IBtn('📢 ለሁሉም መልዕክት ላክ', callback_data='adm_bcast'))
   return kb
@@ -229,7 +229,7 @@ def notify_req(rtype, uid, amt, md, det, reference=None):
   else:
     hdr = '🔔 አዲስ የወጪ (WITHDRAW) ጥያቄ!'
     kb.row(IBtn('✅ ተልኳል', callback_data=f'ap_wd_{rid}'), IBtn('❌ ሰርዝና መልስ', callback_data=f'rj_wd_{rid}'))
-  try: bot.send_message(ADMIN_ID, f'{hdr}\n\n🆔 #{rid}\n👤 {u["name"]} (ID: {uid})\n📞 {u["phone"] or "-"}\n💵 {float(amt):.2f} POINTS\n🏦 {md}\n📝 {det}', reply_markup=kb)
+  try: bot.send_message(ADMIN_ID, f'{hdr}\n\n🆔 #{rid}\n👤 {u["name"]} (ID: {uid})\n📞 {u["phone"] or "-"}\n💵 {float(amt):.2f} ብር\n🏦 {md}\n📝 {det}', reply_markup=kb)
   except Exception: pass
   return rid
 
@@ -269,7 +269,7 @@ if bot:
   @bot.message_handler(func=lambda m: m.text == '💳 ባላንስ (Balance)')
   def c_bal(m):
     u = ensure_user(m.from_user.id, m.from_user.first_name or 'Player')
-    bot.send_message(m.chat.id, f'🏦 ባላንስ\n🎮 Play: {u["play_wallet"]:.2f} POINTS\n🏆 Win: {u["win_wallet"]:.2f} POINTS\n💰 ጠቅላላ: {u["play_wallet"]+u["win_wallet"]:.2f} POINTS', reply_markup=play_kb('🎲 Play'))
+    bot.send_message(m.chat.id, f'🏦 ባላንስ\n🎮 Play: {u["play_wallet"]:.2f} ብር\n🏆 Win: {u["win_wallet"]:.2f} ብር\n💰 ጠቅላላ: {u["play_wallet"]+u["win_wallet"]:.2f} ብር', reply_markup=play_kb('🎲 Play'))
 
   @bot.message_handler(commands=['deposit'])
   @bot.message_handler(func=lambda m: m.text == '💰 ገቢ (Deposit)')
@@ -280,22 +280,22 @@ if bot:
   @bot.callback_query_handler(func=lambda c: c.data in ('dep_TeleBirr', 'dep_CBE'))
   def cb_dep(call):
     bot.answer_callback_query(call.id); md = call.data.split('_')[1]
-    bot.register_next_step_handler(bot.send_message(call.message.chat.id, f'💵 በ {md} የሚያስገቡትን መጠን ይጻፉ (ዝቅተኛ 20 POINTS)፦'), s_dep_amt, md)
+    bot.register_next_step_handler(bot.send_message(call.message.chat.id, f'💵 በ {md} የሚያስገቡትን መጠን ይጻፉ (ዝቅተኛ 20 ብር)፦'), s_dep_amt, md)
 
   def s_dep_amt(m, md):
     try:
       amt = float((m.text or '').strip())
       if not math.isfinite(amt) or amt < 20 or amt > 1000000:
-        return bot.reply_to(m, '❌ 20 POINTS እስከ 1,000,000 POINTS ያለ ትክክለኛ መጠን ያስገቡ።')
+        return bot.reply_to(m, '❌ 20 ብር እስከ 1,000,000 ብር ያለ ትክክለኛ መጠን ያስገቡ።')
     except Exception: return bot.reply_to(m, '❌ ትክክለኛ ቁጥር ያስገቡ።')
-    bot.register_next_step_handler(bot.send_message(m.chat.id, f'🏦 {md}\n👤 {TB_NAME}\n📱 {TB_PHONE}\n💵 {amt:.2f} POINTS\n\nከላኩ በኋላ የSMS Transaction ID ይላኩ 👇'), s_dep_tx, amt, md)
+    bot.register_next_step_handler(bot.send_message(m.chat.id, f'🏦 {md}\n👤 {TB_NAME}\n📱 {TB_PHONE}\n💵 {amt:.2f} ብር\n\nከላኩ በኋላ የSMS Transaction ID ይላኩ 👇'), s_dep_tx, amt, md)
 
   def s_dep_tx(m, amt, md):
     tx = (m.text or '').strip()
     if len(tx) < 4 or len(tx) > 120: return bot.reply_to(m, '❌ ትክክለኛ Transaction ID ያስገቡ።')
     try: notify_req('deposit', m.from_user.id, amt, md, f'TX: {tx}', reference=tx)
     except psycopg2.errors.UniqueViolation: return bot.reply_to(m, '❌ ይህ Transaction ID ቀድሞ ተጠቅሟል።')
-    bot.reply_to(m, f'✅ የ {amt:.2f} POINTS ገቢ ጥያቄዎ ለአድሚን ተልኳል!', reply_markup=menu_kb(m.from_user.id))
+    bot.reply_to(m, f'✅ የ {amt:.2f} ብር ገቢ ጥያቄዎ ለአድሚን ተልኳል!', reply_markup=menu_kb(m.from_user.id))
 
   @bot.message_handler(commands=['withdraw'])
   @bot.message_handler(func=lambda m: m.text == '💸 ወጪ (Withdraw)')
@@ -306,14 +306,14 @@ if bot:
   @bot.callback_query_handler(func=lambda c: c.data in ('wd_TeleBirr', 'wd_CBE'))
   def cb_wd(call):
     bot.answer_callback_query(call.id); md = call.data.split('_')[1]
-    bot.register_next_step_handler(bot.send_message(call.message.chat.id, f'💸 በ {md} የሚወጣውን መጠን ይጻፉ (ዝቅተኛ 100 POINTS)፦'), s_wd_amt, md)
+    bot.register_next_step_handler(bot.send_message(call.message.chat.id, f'💸 በ {md} የሚወጣውን መጠን ይጻፉ (ዝቅተኛ 100 ብር)፦'), s_wd_amt, md)
 
   def s_wd_amt(m, md):
     u = ensure_user(m.from_user.id)
     try: amt = float((m.text or '').strip())
     except Exception: return bot.reply_to(m, '❌ ትክክለኛ ቁጥር ያስገቡ።')
     if not math.isfinite(amt) or amt < 100 or amt > 1000000 or u['win_wallet'] < amt:
-      return bot.reply_to(m, f'❌ 100–1,000,000 POINTS ያስገቡ እና በቂ Win Wallet እንዳለ ያረጋግጡ ({u["win_wallet"]:.2f} POINTS)።')
+      return bot.reply_to(m, f'❌ 100–1,000,000 ብር ያስገቡ እና በቂ Win Wallet እንዳለ ያረጋግጡ ({u["win_wallet"]:.2f} ብር)።')
     bot.register_next_step_handler(bot.reply_to(m, f'📱 የ {md} ስልክ/አካውንት ቁጥርዎን ያስገቡ፦'), s_wd_acc, amt, md)
 
   def s_wd_acc(m, amt, md):
@@ -334,9 +334,9 @@ if bot:
                         ('withdraw', m.from_user.id, amt, md, f'Acc: {acc}', 'pending', int(time.time()))).lastrowid
       if bot and ADMIN_ID:
         kb = IKB(); kb.row(IBtn('✅ ተልኳል', callback_data=f'ap_wd_{rid}'), IBtn('❌ ሰርዝና መልስ', callback_data=f'rj_wd_{rid}'))
-        try: bot.send_message(ADMIN_ID, f'🔔 አዲስ የወጪ ጥያቄ!\n\n🆔 #{rid}\n👤 {m.from_user.first_name or "Player"} (ID: {m.from_user.id})\n💵 {amt:.2f} POINTS\n🏦 {md}\n📱 {acc}', reply_markup=kb)
+        try: bot.send_message(ADMIN_ID, f'🔔 አዲስ የወጪ ጥያቄ!\n\n🆔 #{rid}\n👤 {m.from_user.first_name or "Player"} (ID: {m.from_user.id})\n💵 {amt:.2f} ብር\n🏦 {md}\n📱 {acc}', reply_markup=kb)
         except Exception: pass
-      bot.reply_to(m, f'✅ የ {amt:.2f} POINTS የወጪ ጥያቄዎ ተመዝግቧል።', reply_markup=menu_kb(m.from_user.id))
+      bot.reply_to(m, f'✅ የ {amt:.2f} ብር የወጪ ጥያቄዎ ተመዝግቧል።', reply_markup=menu_kb(m.from_user.id))
     except psycopg2.Error:
       bot.reply_to(m, '❌ ጥያቄውን ማስመዝገብ አልተቻለም። እባክዎ እንደገና ይሞክሩ።')
 
@@ -352,8 +352,8 @@ if bot:
         ww = c.execute('SELECT COALESCE(SUM(win_wallet),0) FROM users').fetchone()[0]
         pn = c.execute("SELECT COUNT(*) FROM requests WHERE status='pending'").fetchone()[0]
         hs = c.execute('SELECT total_commission,total_rounds FROM house_stats WHERE id=1').fetchone()
-      with room_lock: lv = ' | '.join(f'{k}ነጥብ:{n_players(r)}ሰው({r["phase"]})' for k, r in rooms.items())
-      bot.send_message(call.message.chat.id, f'📊 ሪፖርት\n👥 ተጫዋቾች: {uc}\n🎮 Play: {pw:.2f} POINTS\n🏆 Win: {ww:.2f} POINTS\n💰 ትርፍ(20%): {hs["total_commission"]:.2f} POINTS\n🎲 ዙሮች: {hs["total_rounds"]}\n⏳ ጥያቄዎች: {pn}\n🔴 {lv}')
+      with room_lock: lv = ' | '.join(f'{k}ብር:{n_players(r)}ሰው({r["phase"]})' for k, r in rooms.items())
+      bot.send_message(call.message.chat.id, f'📊 ሪፖርት\n👥 ተጫዋቾች: {uc}\n🎮 Play: {pw:.2f} ብር\n🏆 Win: {ww:.2f} ብር\n💰 ትርፍ(20%): {hs["total_commission"]:.2f} ብር\n🎲 ዙሮች: {hs["total_rounds"]}\n⏳ ጥያቄዎች: {pn}\n🔴 {lv}')
     elif d == 'adm_users':
       with get_db() as c: rows = c.execute('SELECT * FROM users ORDER BY created_at DESC LIMIT 20').fetchall()
       bot.send_message(call.message.chat.id, '\n'.join(f'• {r["name"]} (`{r["uid"]}`) | P:{r["play_wallet"]:.1f} W:{r["win_wallet"]:.1f}' for r in rows) or 'ምንም ተጫዋች የለም።', parse_mode='Markdown')
@@ -384,16 +384,16 @@ if bot:
             c.execute('UPDATE users SET play_wallet=play_wallet+15 WHERE uid=%s', (u['referred_by'],))
             c.execute('UPDATE users SET referred_by=NULL WHERE uid=%s', (uid,))
             add_tx(c, u['referred_by'], '🎁', 'የግብዣ ሽልማት', 15.0)
-          bot.edit_message_text(call.message.text + f'\n\n✅ ጸድቋል (+{amt:.2f} POINTS)', call.message.chat.id, call.message.message_id)
-          try: bot.send_message(uid, f'🎉 የ {amt:.2f} POINTS ገቢዎ ጸድቋል!')
+          bot.edit_message_text(call.message.text + f'\n\n✅ ጸድቋል (+{amt:.2f} ብር)', call.message.chat.id, call.message.message_id)
+          try: bot.send_message(uid, f'🎉 የ {amt:.2f} ብር ገቢዎ ጸድቋል!')
           except Exception: pass
         elif rt == 'dep':
           c.execute("UPDATE requests SET status='rejected' WHERE id=%s", (int(rid),))
           bot.edit_message_text(call.message.text + '\n\n❌ ተሰርዟል', call.message.chat.id, call.message.message_id)
         elif rt == 'wd' and act == 'ap':
           c.execute("UPDATE requests SET status='paid' WHERE id=%s", (int(rid),))
-          bot.edit_message_text(call.message.text + f'\n\n✅ ተልኳል ({amt:.2f} POINTS)', call.message.chat.id, call.message.message_id)
-          try: bot.send_message(uid, f'✅ የ {amt:.2f} POINTS ወጪዎ ተልኳል!')
+          bot.edit_message_text(call.message.text + f'\n\n✅ ተልኳል ({amt:.2f} ብር)', call.message.chat.id, call.message.message_id)
+          try: bot.send_message(uid, f'✅ የ {amt:.2f} ብር ወጪዎ ተልኳል!')
           except Exception: pass
         else:
           c.execute("UPDATE requests SET status='rejected' WHERE id=%s", (int(rid),))
@@ -412,7 +412,7 @@ if bot:
         if act == 'add': c.execute('UPDATE users SET play_wallet=play_wallet+%s WHERE uid=%s', (amt, uid)); add_tx(c, uid, '🎁', 'አድሚን ጨምሯል', amt)
         else: c.execute('UPDATE users SET play_wallet=GREATEST(0,play_wallet-%s) WHERE uid=%s', (amt, uid)); add_tx(c, uid, '➖', 'አድሚን ቀንሷል', -amt)
         pw = c.execute('SELECT play_wallet FROM users WHERE uid=%s', (uid,)).fetchone()[0]
-      bot.reply_to(m, f'✅ ተስተካክሏል! ID `{uid}` Play: {pw:.2f} POINTS', parse_mode='Markdown')
+      bot.reply_to(m, f'✅ ተስተካክሏል! ID `{uid}` Play: {pw:.2f} ብር', parse_mode='Markdown')
     except Exception: bot.reply_to(m, '❌ ምሳሌ፦ `528672685 100`', parse_mode='Markdown')
 
   def s_bcast(m):
@@ -427,7 +427,7 @@ if bot:
   @bot.message_handler(func=lambda m: m.text == '👥 ግብዣ (Invite)')
   def c_inv(m):
     me = bot.get_me()
-    bot.send_message(m.chat.id, f'🎁 ለእያንዳንዱ ስኬታማ ግብዣ 15 POINTS ይሸለሙ!\n🔗 https://t.me/{me.username}?start={m.from_user.id}')
+    bot.send_message(m.chat.id, f'🎁 ለእያንዳንዱ ስኬታማ ግብዣ 15 ብር ይሸለሙ!\n🔗 https://t.me/{me.username}?start={m.from_user.id}')
 
   @bot.message_handler(func=lambda m: m.text == '📝 ምዝገባ (Register)')
   def c_reg(m):
@@ -438,7 +438,7 @@ if bot:
   def c_sup(m): bot.send_message(m.chat.id, f'🎧 ድጋፍ፦ {SUPPORT}')
 
   @bot.message_handler(func=lambda m: m.text == '📜 ህግና መመሪያ')
-  def c_rules(m): bot.send_message(m.chat.id, '📜 ህግና መመሪያ\n• ቢያንስ 2 ተጫዋቾች ካርድ ሲገዙ ይጀምራል።\n• ካርድ: 10/20/50 ነጥብ (እስከ 4)።\n• ደራሽ: 80% ለአሸናፊው።\n• ዝቅተኛ ወጪ: 100 POINTS።')
+  def c_rules(m): bot.send_message(m.chat.id, '📜 ህግና መመሪያ\n• ቢያንስ 2 ተጫዋቾች ካርድ ሲገዙ ይጀምራል።\n• ካርድ: 10/20/50 ብር (እስከ 4)።\n• ደራሽ: 80% ለአሸናፊው።\n• ዝቅተኛ ወጪ: 100 ብር።')
 
 def run_bot():
   if not bot: return print('WARNING: BOT_TOKEN not set; bot polling skipped.')
@@ -507,7 +507,7 @@ async def api_buy(req: Request, x_tg_init_data: str = Header(default='')):
       c.execute('BEGIN')
       wallet = c.execute('SELECT play_wallet FROM users WHERE uid=%s', (u['uid'],)).fetchone()
       if not wallet or wallet['play_wallet'] < st: raise HTTPException(400, 'በቂ Play Wallet የለዎትም! ገቢ ያድርጉ።')
-      c.execute('UPDATE users SET play_wallet=play_wallet-%s WHERE uid=%s', (st, u['uid'])); add_tx(c, u['uid'], '🎴', f'ካርድ #{cno} ({st} ነጥብ)', -st)
+      c.execute('UPDATE users SET play_wallet=play_wallet-%s WHERE uid=%s', (st, u['uid'])); add_tx(c, u['uid'], '🎴', f'ካርድ #{cno} ({st} ብር)', -st)
     r['cards'][cno] = {'uid': u['uid'], 'name': u['name'], 'grid': gen_card(cno)}
     return {'ok': True, 'action': 'bought'}
 
@@ -551,7 +551,7 @@ async def api_dep(req: Request, x_tg_init_data: str = Header(default='')):
   except Exception:
     raise HTTPException(400, 'የገቢ ጥያቄ መረጃ ትክክል አይደለም።')
   if not math.isfinite(amt) or amt < 20 or amt > 1000000:
-    raise HTTPException(400, 'ከ20 እስከ 1,000,000 POINTS ያለ መጠን ያስገቡ።')
+    raise HTTPException(400, 'ከ20 እስከ 1,000,000 ብር ያለ መጠን ያስገቡ።')
   if md not in ('TeleBirr', 'CBE Birr'):
     raise HTTPException(400, 'TeleBirr ወይም CBE Birr ይምረጡ።')
   if len(reference) < 4 or len(reference) > 120:
@@ -575,7 +575,7 @@ async def api_wd(req: Request, x_tg_init_data: str = Header(default='')):
   except Exception:
     raise HTTPException(400, 'የወጪ ጥያቄ መረጃ ትክክል አይደለም።')
   if not math.isfinite(amt) or amt < 100 or amt > 1000000:
-    raise HTTPException(400, 'ከ100 እስከ 1,000,000 POINTS ያለ መጠን ያስገቡ።')
+    raise HTTPException(400, 'ከ100 እስከ 1,000,000 ብር ያለ መጠን ያስገቡ።')
   if md not in ('TeleBirr', 'CBE Birr') or len(account) < 6 or len(account) > 64:
     raise HTTPException(400, 'የክፍያ ዘዴንና የአካውንት ቁጥርን ያረጋግጡ።')
   try:
@@ -593,7 +593,7 @@ async def api_wd(req: Request, x_tg_init_data: str = Header(default='')):
     if bot and ADMIN_ID:
       kb = IKB()
       kb.row(IBtn('✅ ተልኳል', callback_data=f'ap_wd_{rid}'), IBtn('❌ ሰርዝና መልስ', callback_data=f'rj_wd_{rid}'))
-      try: bot.send_message(ADMIN_ID, f'🔔 አዲስ የወጪ ጥያቄ!\n\n🆔 #{rid}\n👤 {u["name"]} (ID: {u["uid"]})\n💵 {amt:.2f} POINTS\n🏦 {md}\n📱 {account}', reply_markup=kb)
+      try: bot.send_message(ADMIN_ID, f'🔔 አዲስ የወጪ ጥያቄ!\n\n🆔 #{rid}\n👤 {u["name"]} (ID: {u["uid"]})\n💵 {amt:.2f} ብር\n🏦 {md}\n📱 {account}', reply_markup=kb)
       except Exception: pass
   except HTTPException:
     raise
