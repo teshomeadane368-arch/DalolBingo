@@ -726,6 +726,8 @@ function cpTxt(t, m) {
   toast(m || 'ተቀድቷል!');
 }
 
+var initialTab = new URLSearchParams(window.location.search).get('tab');
+if (initialTab && ['bingo','wallet','history','rank','profile'].indexOf(initialTab) >= 0) goTab(initialTab);
 pollState();
 setInterval(pollState, 1200);
 </script>
