@@ -200,6 +200,7 @@ def menu_kb(uid=None):
   kb = RKB(resize_keyboard=True)
   kb.row(KBtn('🎮 Play Dalol Bingo'))
   kb.row(KBtn('💳 ባላንስ (Balance)'), KBtn('👥 ግብዣ (Invite)'))
+  kb.row(KBtn('💰 ገቢ (Deposit)'), KBtn('💸 ወጪ (Withdraw)'))
   kb.row(KBtn('📝 ምዝገባ (Register)'), KBtn('🎧 ድጋፍ (Support)'))
   kb.row(KBtn('📜 ህግና መመሪያ'), KBtn('👑 Admin Panel')) if (uid and is_adm(uid)) else kb.row(KBtn('📜 ህግና መመሪያ'))
   return kb
