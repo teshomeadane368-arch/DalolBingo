@@ -235,6 +235,13 @@ body.light .status-banner{color:#1d4ed8}
         <div class="wsub"><div class="l">🏆 WIN WALLET</div><div id="wwVal" class="a c-gold">0.00</div><div class="h">የሙከራ ነጥቦች</div></div>
       </div>
       <div class="spec">🧪 <strong>DEMO MODE</strong><br/>ይህ ስሪት ለሙከራ ነው። እውነተኛ ገንዘብ ማስገባት ወይም ማውጣት አይቻልም። የሙከራ ነጥቦችን አድሚን ብቻ ይመድባል።</div>
+      <div class="scard">
+        <div class="shd"><span>🏦 የክፍያ መረጃ (Payment Details)</span></div>
+        <div class="irow"><span style="color:var(--mut)">የአካውንት ስም፦</span><strong id="payName">HABTE GEBRIEL DEGAGA</strong></div>
+        <div class="irow"><span style="color:var(--mut)">TeleBirr፦</span><strong id="payTeleBirr">-</strong></div>
+        <div class="irow"><span style="color:var(--mut)">CBE Birr፦</span><strong id="payCbeBirr">-</strong></div>
+        <div style="margin-top:10px;font-size:11px;color:var(--mut);line-height:1.6">⚠️ እነዚህ መረጃዎች ለማሳያ ብቻ ናቸው። የገንዘብ ገቢና ወጪ አሁንም ተዘግተዋል።</div>
+      </div>
     </div>
   </section>
 
@@ -426,6 +433,9 @@ function renderState(d) {
   document.getElementById('prPly').textContent = u.matches_played;
   document.getElementById('prWin').textContent = u.wins;
   document.getElementById('prSup').textContent = cfg.support;
+  document.getElementById('payName').textContent = cfg.telebirr_name || 'HABTE GEBRIEL DEGAGA';
+  document.getElementById('payTeleBirr').textContent = cfg.telebirr_phone || '-';
+  document.getElementById('payCbeBirr').textContent = cfg.cbe_phone || '-';
 
   if (r.phase === 'WAITING' || r.phase === 'COUNTDOWN') {
     document.getElementById('winOv').classList.remove('on');
