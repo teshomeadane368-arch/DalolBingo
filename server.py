@@ -273,7 +273,8 @@ if bot:
   @bot.message_handler(commands=['deposit'])
   @bot.message_handler(func=lambda m: m.text == '💰 ገቢ (Deposit)')
   def c_dep(m):
-    bot.reply_to(m, '🧪 DALOL BINGO የሙከራ ስሪት ነው፤ ገንዘብ ማስገባት አይቻልም።')
+    kb = IKB(); kb.add(IBtn('💳 Wallet ክፈት', web_app=WebAppInfo(url=APP_URL + '?tab=wallet')))
+    bot.reply_to(m, '💳 ገቢ ለማድረግ DALOL BINGO Walletን ይክፈቱ።', reply_markup=kb)
 
   @bot.callback_query_handler(func=lambda c: c.data in ('dep_TeleBirr', 'dep_CBE'))
   def cb_dep(call):
@@ -298,7 +299,8 @@ if bot:
   @bot.message_handler(commands=['withdraw'])
   @bot.message_handler(func=lambda m: m.text == '💸 ወጪ (Withdraw)')
   def c_wd(m):
-    bot.reply_to(m, '🧪 DALOL BINGO የሙከራ ስሪት ነው፤ ገንዘብ ማውጣት አይቻልም።')
+    kb = IKB(); kb.add(IBtn('💸 Wallet ክፈት', web_app=WebAppInfo(url=APP_URL + '?tab=wallet')))
+    bot.reply_to(m, '💸 ወጪ ለመጠየቅ DALOL BINGO Walletን ይክፈቱ።', reply_markup=kb)
 
   @bot.callback_query_handler(func=lambda c: c.data in ('wd_TeleBirr', 'wd_CBE'))
   def cb_wd(call):
