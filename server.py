@@ -20,6 +20,8 @@ APP_URL = ('https://' + APP_URL[8:]) if APP_URL.lower().startswith('https://') e
 SUPPORT = os.environ.get('SUPPORT_USERNAME', '@your_support_username')
 TB_NAME = os.environ.get('TELEBIRR_NAME', 'DEMO ONLY')
 TB_PHONE = os.environ.get('TELEBIRR_PHONE', '')
+CB_NAME = os.environ.get('CBE_BIRR_NAME', TB_NAME)
+CB_PHONE = os.environ.get('CBE_BIRR_PHONE', '')
 DATABASE_URL = os.environ.get('DATABASE_URL', '').strip()
 HOUSE_CUT, CD_SEC, CALL_SEC, WIN_SEC = 0.20, 25, 3.0, 10
 MIN_PLAYERS = int(os.environ.get('MIN_PLAYERS', '2') or '2')
@@ -477,7 +479,7 @@ def api_state(stake: int = 10, x_tg_init_data: str = Header(default='')):
     txs = [dict(x) for x in c.execute('SELECT icon,title,amount,created_at FROM transactions WHERE uid=%s ORDER BY id DESC LIMIT 25', (u['uid'],)).fetchall()]
     top = [dict(x) for x in c.execute('SELECT name,total_won FROM users WHERE total_won>0 ORDER BY total_won DESC LIMIT 10').fetchall()]
   return {'user': {'uid': u['uid'], 'name': u['name'], 'play_wallet': round(u['play_wallet'],2), 'win_wallet': round(u['win_wallet'],2), 'matches_played': u['matches_played'], 'wins': u['wins']},
-          'config': {'telebirr_name': TB_NAME, 'telebirr_phone': TB_PHONE, 'support': SUPPORT}, 'room': snap, 'history': txs, 'rank': top}
+          'config': {'telebirr_name': TB_NAME, 'telebirr_phone': TB_PHONE, 'cbe_name': CB_NAME, 'cbe_phone': CB_PHONE, 'support': SUPPORT}, 'room': snap, 'history': txs, 'rank': top}
 
 @app.post('/api/buy_card')
 async def api_buy(req: Request, x_tg_init_data: str = Header(default='')):
