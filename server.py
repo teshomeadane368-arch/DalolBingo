@@ -59,7 +59,7 @@ def get_db():
   if not DATABASE_URL:
     raise RuntimeError('DATABASE_URL is missing. Add the Neon connection string in Render Environment.')
   with db_lock:
-    raw = psycopg2.connect(DATABASE_URL, sslmode='require', connect_timeout=15)
+    raw = psycopg2.connect(DATABASE_URL, sslmode='require', connect_timeout=15, cursor_factory=DictCursor)
     c = DBConnection(raw)
     try:
       yield c
