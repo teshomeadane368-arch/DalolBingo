@@ -486,7 +486,7 @@ async def api_buy(req: Request, x_tg_init_data: str = Header(default='')):
   u, b = auth_user(x_tg_init_data), await req.json()
   try: st, cno = int(b.get('stake', 10)), int(b.get('card_no', 0))
   except (TypeError, ValueError): raise HTTPException(400, 'ልክ ያልሆነ ካርድ!')
-  if st not in rooms or not (1 <= cno <= 100): raise HTTPException(400, 'ልክ ያልሆነ ካርድ!')
+  if st not in rooms or not (1 <= cno <= 400): raise HTTPException(400, 'ልክ ያልሆነ ካርድ!')
   with room_lock:
     r = rooms[st]
     if r['phase'] not in ('WAITING', 'COUNTDOWN'): raise HTTPException(400, 'ጨዋታው ተጀምሯል!')
@@ -538,9 +538,62 @@ async def api_transfer(x_tg_init_data: str = Header(default='')):
   return {'ok': True, 'amount': amt}
 
 @app.post('/api/deposit')
-async def api_dep():
-  raise HTTPException(403, 'DALOL BINGO demo mode: cash deposits are disabled.')
+async def api_dep(req: Request, x_tg_init_data: str = Header(default='')):
+  u = auth_user(x_tg_init_data)
+  try:
+    b = await req.json()
+    amt = float(b.get('amount', 0))
+    md = str(b.get('method', '')).strip()
+    reference = str(b.get('reference', '')).strip()
+  except Exception:
+    raise HTTPException(400, 'የገቢ ጥያቄ መረጃ ትክክል አይደለም።')
+  if not math.isfinite(amt) or amt < 20 or amt > 1000000:
+    raise HTTPException(400, 'ከ20 እስከ 1,000,000 POINTS ያለ መጠን ያስገቡ።')
+  if md not in ('TeleBirr', 'CBE Birr'):
+    raise HTTPException(400, 'TeleBirr ወይም CBE Birr ይምረጡ።')
+  if len(reference) < 4 or len(reference) > 120:
+    raise HTTPException(400, 'ትክክለኛ Transaction ID ያስገቡ።')
+  try:
+    rid = notify_req('deposit', u['uid'], amt, md, f'TX: {reference}', reference=reference)
+  except psycopg2.errors.UniqueViolation:
+    raise HTTPException(409, 'ይህ Transaction ID ቀድሞ ተጠቅሟል።')
+  except psycopg2.Error:
+    raise HTTPException(503, 'ጥያቄውን ማስመዝገብ አልተቻለም።')
+  return {'ok': True, 'request_id': rid, 'status': 'pending', 'message': 'የገቢ ጥያቄዎ ለአድሚን ተልኳል።'}
 
 @app.post('/api/withdraw')
-async def api_wd():
-  raise HTTPException(403, 'DALOL BINGO demo mode: cash withdrawals are disabled.')
+async def api_wd(req: Request, x_tg_init_data: str = Header(default='')):
+  u = auth_user(x_tg_init_data)
+  try:
+    b = await req.json()
+    amt = float(b.get('amount', 0))
+    md = str(b.get('method', '')).strip()
+    account = str(b.get('account', '')).strip()
+  except Exception:
+    raise HTTPException(400, 'የወጪ ጥያቄ መረጃ ትክክል አይደለም።')
+  if not math.isfinite(amt) or amt < 100 or amt > 1000000:
+    raise HTTPException(400, 'ከ100 እስከ 1,000,000 POINTS ያለ መጠን ያስገቡ።')
+  if md not in ('TeleBirr', 'CBE Birr') or len(account) < 6 or len(account) > 64:
+    raise HTTPException(400, 'የክፍያ ዘዴንና የአካውንት ቁጥርን ያረጋግጡ።')
+  try:
+    with get_db() as c:
+      c.execute('BEGIN')
+      row = c.execute('SELECT win_wallet FROM users WHERE uid=%s FOR UPDATE', (u['uid'],)).fetchone()
+      if not row or float(row['win_wallet']) < amt:
+        raise HTTPException(400, 'በ Win Wallet በቂ ባላንስ የለዎትም።')
+      cur = c.execute('UPDATE users SET win_wallet=win_wallet-%s WHERE uid=%s AND win_wallet>=%s', (amt, u['uid'], amt))
+      if cur.rowcount != 1:
+        raise HTTPException(409, 'ባላንሱ ተቀይሯል፤ እንደገና ይሞክሩ።')
+      add_tx(c, u['uid'], '⏳', f'የወጪ ጥያቄ ({md})', -amt)
+      rid = c.execute('INSERT INTO requests (req_type,uid,amount,method,details,status,created_at) VALUES (%s,%s,%s,%s,%s,%s,%s)',
+        ('withdraw', u['uid'], amt, md, f'Acc: {account}', 'pending', int(time.time()))).lastrowid
+    if bot and ADMIN_ID:
+      kb = IKB()
+      kb.row(IBtn('✅ ተልኳል', callback_data=f'ap_wd_{rid}'), IBtn('❌ ሰርዝና መልስ', callback_data=f'rj_wd_{rid}'))
+      try: bot.send_message(ADMIN_ID, f'🔔 አዲስ የወጪ ጥያቄ!\n\n🆔 #{rid}\n👤 {u["name"]} (ID: {u["uid"]})\n💵 {amt:.2f} POINTS\n🏦 {md}\n📱 {account}', reply_markup=kb)
+      except Exception: pass
+  except HTTPException:
+    raise
+  except psycopg2.Error:
+    raise HTTPException(503, 'የወጪ ጥያቄውን ማስመዝገብ አልተቻለም።')
+  return {'ok': True, 'request_id': rid, 'status': 'pending', 'message': 'የወጪ ጥያቄዎ ተመዝግቧል።'}
