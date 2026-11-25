@@ -234,6 +234,21 @@ body.light .status-banner{color:#1d4ed8}
         <div class="wsub"><div class="l">🏆 WIN WALLET</div><div id="wwVal" class="a c-gold">0.00</div><div class="h">የሙከራ ነጥቦች</div></div>
       </div>
       <div class="scard">
+        <div class="shd"><span>💳 ገንዘብ ማስገባት (Deposit)</span></div>
+        <div class="irow"><span>ዘዴ</span><select id="depMethod"><option>TeleBirr</option><option>CBE Birr</option></select></div>
+        <div class="irow"><span>መጠን (POINTS)</span><input id="depAmount" type="number" min="20" max="1000000" placeholder="ለምሳሌ 100"></div>
+        <div class="irow"><span>Transaction ID</span><input id="depReference" type="text" maxlength="120" placeholder="የክፍያ SMS መለያ"></div>
+        <button class="cbtn" onclick="submitDeposit()">📤 የገቢ ጥያቄ ላክ</button>
+      </div>
+      <div class="scard">
+        <div class="shd"><span>💸 ገንዘብ ማውጣት (Withdraw)</span></div>
+        <div class="irow"><span>ዘዴ</span><select id="wdMethod"><option>TeleBirr</option><option>CBE Birr</option></select></div>
+        <div class="irow"><span>መጠን (POINTS)</span><input id="wdAmount" type="number" min="100" max="1000000" placeholder="ቢያንስ 100"></div>
+        <div class="irow"><span>የአካውንት ቁጥር</span><input id="wdAccount" type="text" maxlength="64" placeholder="የሚቀበሉበት ስልክ/አካውንት"></div>
+        <button class="cbtn" onclick="submitWithdraw()">📥 የወጪ ጥያቄ ላክ</button>
+        <div class="spec">የወጪ ጥያቄ ሲላክ መጠኑ ከWin Wallet ይያዛል፤ አድሚን ካጸደቀ ወይም ከከለከለ ሁኔታው ይዘምናል።</div>
+      </div>
+      <div class="scard">
         <div class="shd"><span>🏦 የክፍያ መረጃ (Payment Details)</span></div>
         <div class="irow"><span style="color:var(--mut)">የአካውንት ስም፦</span><strong id="payName">HABTE GEBRIEL DEGAGA</strong></div>
         <div class="irow"><span style="color:var(--mut)">TeleBirr፦</span><strong id="payTeleBirr">-</strong></div>
@@ -637,6 +652,34 @@ async function winToPlay() {
     toast('✅ ' + res.amount.toFixed(2) + ' POINTS ወደ Play Wallet ተዛውሯል!');
     await pollState();
   } catch (e) { toast('❌ ' + e.message); }
+}
+
+async function submitDeposit() {
+  var amount = Number(document.getElementById('depAmount').value);
+  var method = document.getElementById('depMethod').value;
+  var reference = document.getElementById('depReference').value.trim();
+  if (!Number.isFinite(amount) || amount < 20 || !reference) return toast('❌ መጠኑንና Transaction ID ያስገቡ።');
+  try {
+    var out = await apiReq('/api/deposit', 'POST', {amount:amount, method:method, reference:reference});
+    toast('✅ ' + out.message + ' #' + out.request_id);
+    document.getElementById('depReference').value = '';
+    document.getElementById('depAmount').value = '';
+    await pollState();
+  } catch(e) { toast('❌ ' + e.message); }
+}
+
+async function submitWithdraw() {
+  var amount = Number(document.getElementById('wdAmount').value);
+  var method = document.getElementById('wdMethod').value;
+  var account = document.getElementById('wdAccount').value.trim();
+  if (!Number.isFinite(amount) || amount < 100 || account.length < 6) return toast('❌ መጠኑንና የአካውንት ቁጥር ያረጋግጡ።');
+  try {
+    var out = await apiReq('/api/withdraw', 'POST', {amount:amount, method:method, account:account});
+    toast('✅ ' + out.message + ' #' + out.request_id);
+    document.getElementById('wdAccount').value = '';
+    document.getElementById('wdAmount').value = '';
+    await pollState();
+  } catch(e) { toast('❌ ' + e.message); }
 }
 
 
