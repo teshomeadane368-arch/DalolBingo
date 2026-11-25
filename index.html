@@ -241,14 +241,14 @@ body.light .status-banner{color:#1d4ed8}
       <div class="scard">
         <div class="shd"><span>💳 ገንዘብ ማስገባት (Deposit)</span></div>
         <div class="irow"><span>ዘዴ</span><select id="depMethod"><option>TeleBirr</option><option>CBE Birr</option></select></div>
-        <div class="irow"><span>መጠን (POINTS)</span><input id="depAmount" type="number" min="20" max="1000000" placeholder="ለምሳሌ 100"></div>
+        <div class="irow"><span>መጠን (ብር)</span><input id="depAmount" type="number" min="20" max="1000000" placeholder="ለምሳሌ 100"></div>
         <div class="irow"><span>Transaction ID</span><input id="depReference" type="text" maxlength="120" placeholder="የክፍያ SMS መለያ"></div>
         <button class="cbtn" onclick="submitDeposit()">📤 የገቢ ጥያቄ ላክ</button>
       </div>
       <div class="scard">
         <div class="shd"><span>💸 ገንዘብ ማውጣት (Withdraw)</span></div>
         <div class="irow"><span>ዘዴ</span><select id="wdMethod"><option>TeleBirr</option><option>CBE Birr</option></select></div>
-        <div class="irow"><span>መጠን (POINTS)</span><input id="wdAmount" type="number" min="100" max="1000000" placeholder="ቢያንስ 100"></div>
+        <div class="irow"><span>መጠን (ብር)</span><input id="wdAmount" type="number" min="100" max="1000000" placeholder="ቢያንስ 100"></div>
         <div class="irow"><span>የአካውንት ቁጥር</span><input id="wdAccount" type="text" maxlength="64" placeholder="የሚቀበሉበት ስልክ/አካውንት"></div>
         <button class="cbtn" onclick="submitWithdraw()">📥 የወጪ ጥያቄ ላክ</button>
         <div class="spec">የወጪ ጥያቄ ሲላክ መጠኑ ከWin Wallet ይያዛል፤ አድሚን ካጸደቀ ወይም ከከለከለ ሁኔታው ይዘምናል።</div>
@@ -303,7 +303,7 @@ body.light .status-banner{color:#1d4ed8}
   <div class="wcard">
     <div class="wttl">🏆 BINGO! 🏆</div>
     <div id="wName" class="wnm">👑 Winner</div>
-    <div id="wPrz" class="wprz">0 POINTS</div>
+    <div id="wPrz" class="wprz">0 ብር</div>
     <div class="wbox">
       <div id="wLbl" style="font-size:12px;font-weight:800;color:#fbbf24">CARD</div>
       <div id="wGrd" class="wgrd"></div>
@@ -543,7 +543,7 @@ function renderState(d) {
         var g = r.my_boards[String(no)] || [];
         var mk = autoMark ? calMap : (manualMarks[no] || {});
         var wl = checkWinLocal(g, calMap);
-        return '<div class="pcard ' + (wl ? 'win' : '') + '"><div class="ptop"><span>CARD #' + no + '</span><span>' + r.stake + ' POINTS</span></div><div class="bhdr"><div class="ch cB">B</div><div class="ch cI">I</div><div class="ch cN">N</div><div class="ch cG">G</div><div class="ch cO">O</div></div><div class="pgrid">' + g.map(function(v) {
+        return '<div class="pcard ' + (wl ? 'win' : '') + '"><div class="ptop"><span>CARD #' + no + '</span><span>' + r.stake + ' ብር</span></div><div class="bhdr"><div class="ch cB">B</div><div class="ch cI">I</div><div class="ch cN">N</div><div class="ch cG">G</div><div class="ch cO">O</div></div><div class="pgrid">' + g.map(function(v) {
           var isF = v === 'FREE', isM = !isF && mk[v], isCU = !isF && !isM && calMap[v];
           var c = isF ? 'fr' : isM ? 'mk' : isCU ? 'cu' : '';
           return '<div class="pc ' + c + '" onclick="tapManual(' + no + ',' + (isF ? "'FREE'" : v) + ')">' + v + '</div>';
@@ -558,7 +558,7 @@ function renderState(d) {
         playVoice('bingo', 'Bingo!', 880);
       }
       document.getElementById('wName').textContent = '👑 ' + w.name + ' #' + w.card_no;
-      document.getElementById('wPrz').textContent = w.prize + ' POINTS';
+      document.getElementById('wPrz').textContent = w.prize + ' ብር';
       document.getElementById('wLbl').textContent = w.name + ' (CARD #' + w.card_no + ')';
       document.getElementById('wGrd').innerHTML = w.grid.map(function(v, idx) {
         var c = w.win_line.indexOf(idx) > -1 ? 'wl' : (v === 'FREE' || calMap[v]) ? 'cal' : '';
@@ -579,7 +579,7 @@ function renderState(d) {
       var dt = new Date(x.created_at * 1000);
       var tm = String(dt.getHours()).padStart(2,'0') + ':' + String(dt.getMinutes()).padStart(2,'0');
       var pos = x.amount >= 0;
-      return '<div class="hitem"><div class="hl"><div class="hico">' + x.icon + '</div><div><div style="font-size:13px;font-weight:700">' + x.title + '</div><div style="font-size:10.5px;color:var(--mut)">' + tm + '</div></div></div><div style="font-size:13px;font-weight:800;color:' + (pos ? 'var(--em)' : '#f87171') + '">' + (pos ? '+' : '') + x.amount.toFixed(2) + ' POINTS</div></div>';
+      return '<div class="hitem"><div class="hl"><div class="hico">' + x.icon + '</div><div><div style="font-size:13px;font-weight:700">' + x.title + '</div><div style="font-size:10.5px;color:var(--mut)">' + tm + '</div></div></div><div style="font-size:13px;font-weight:800;color:' + (pos ? 'var(--em)' : '#f87171') + '">' + (pos ? '+' : '') + x.amount.toFixed(2) + ' ብር</div></div>';
     }).join('');
   }
 
@@ -589,7 +589,7 @@ function renderState(d) {
   } else {
     var md = ['🥇','🥈','🥉'];
     rl.innerHTML = d.rank.map(function(x, i) {
-      return '<div class="rrow ' + (i === 0 ? 't1' : '') + '"><div class="hl"><div class="hico" style="font-weight:800">' + (i < 3 ? md[i] : (i + 1)) + '</div><div style="font-size:13.5px;font-weight:700">' + x.name + '</div></div><div class="c-gold" style="font-size:13.5px;font-weight:800">' + x.total_won.toFixed(2) + ' POINTS</div></div>';
+      return '<div class="rrow ' + (i === 0 ? 't1' : '') + '"><div class="hl"><div class="hico" style="font-weight:800">' + (i < 3 ? md[i] : (i + 1)) + '</div><div style="font-size:13.5px;font-weight:700">' + x.name + '</div></div><div class="c-gold" style="font-size:13.5px;font-weight:800">' + x.total_won.toFixed(2) + ' ብር</div></div>';
     }).join('');
   }
 }
@@ -645,7 +645,7 @@ async function claimBingo(no) {
   busy = true;
   try {
     var res = await apiReq('/api/claim_bingo', 'POST', { stake: stake, card_no: no });
-    toast('🏆 እንኳን ደስ አለዎት! ' + res.prize + ' POINTS አሸንፈዋል!');
+    toast('🏆 እንኳን ደስ አለዎት! ' + res.prize + ' ብር አሸንፈዋል!');
     await pollState();
   } catch (e) { toast('❌ ' + e.message); }
   busy = false;
@@ -654,7 +654,7 @@ async function claimBingo(no) {
 async function winToPlay() {
   try {
     var res = await apiReq('/api/transfer', 'POST', {});
-    toast('✅ ' + res.amount.toFixed(2) + ' POINTS ወደ Play Wallet ተዛውሯል!');
+    toast('✅ ' + res.amount.toFixed(2) + ' ብር ወደ Play Wallet ተዛውሯል!');
     await pollState();
   } catch (e) { toast('❌ ' + e.message); }
 }
