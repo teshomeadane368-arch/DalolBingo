@@ -150,6 +150,21 @@ body.light .status-banner{color:#1d4ed8}
 .toast{position:fixed;top:62px;left:50%;transform:translateX(-50%);z-index:100;background:#0f172a;color:#fff;border:1px solid var(--bdg);padding:9px 16px;border-radius:99px;font-size:12.5px;font-weight:700;display:none;max-width:90%;text-align:center}
 .toast.on{display:block}
 .auth-err{padding:40px 20px;text-align:center;line-height:1.7}
+
+ .wallet-shell{background:linear-gradient(160deg,#17102f,#100b27 70%,#0d0920);border:1px solid rgba(167,139,250,.3);border-radius:24px;padding:20px 16px 18px;box-shadow:0 12px 35px rgba(0,0,0,.35);color:#f8f4ff}
+ .wallet-heading{font-size:14px;font-weight:850;margin:2px 0 18px}.wallet-total{border:1px solid rgba(167,139,250,.22);background:rgba(30,20,58,.7);border-radius:22px;padding:30px 10px;text-align:center;margin-bottom:22px}
+ .wallet-total-label{font-size:13px;color:#c4b5fd;font-weight:800}.wallet-total-value{font-size:38px;font-weight:950;color:#ffd84d;margin:8px 0}.wallet-total-note{font-size:12px;color:#aaa0c8}
+ .wallet-actions{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.wallet-action{border:0;border-radius:18px;padding:18px 4px;font-size:14px;font-weight:900;color:white}
+ .wallet-action.deposit{background:linear-gradient(135deg,#10b981,#059669)}.wallet-action.withdraw{background:linear-gradient(135deg,#facc15,#f59e0b);color:#211500}.wallet-action.transfer{background:linear-gradient(135deg,#2563eb,#1d4ed8)}
+ .wallet-divider{height:1px;background:rgba(196,181,253,.16);margin:20px 0}.wallet-section-title{font-size:14px;font-weight:900;color:#34d399;margin-bottom:14px}
+ .wallet-methods{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}.wallet-method{display:flex;align-items:center;justify-content:center;gap:10px;min-height:82px;border-radius:17px;border:1px solid rgba(167,139,250,.2);background:rgba(25,18,50,.85);color:#f8f4ff;font-size:14px}
+ .wallet-method.selected{border-color:#d6a84a;background:rgba(120,74,35,.3);box-shadow:0 0 0 1px rgba(214,168,74,.15)}.method-logo{width:46px;height:46px;border-radius:12px;background:white;display:flex;align-items:center;justify-content:center;font-size:24px}
+ .wallet-account{border:1px solid rgba(167,139,250,.45);border-radius:18px;padding:15px;margin:12px 0 18px;background:rgba(30,20,58,.65)}.wallet-account-top{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:14px}.wallet-account-top strong{font-size:15px;flex:1}
+ .wallet-account-owner{font-size:12px;color:#c4b5fd;margin-top:13px}.wallet-instruction{font-size:12px;line-height:1.7;color:#c4b5fd}.wallet-inputs{display:flex;flex-direction:column;gap:9px;margin-top:14px}
+ .wallet-inputs label{font-size:12px;font-weight:800;color:#d8d0ef}.wallet-inputs input,.wallet-inputs textarea{width:100%;border:1px solid rgba(167,139,250,.18);border-radius:15px;padding:15px;background:#1b1438;color:white;font:inherit;font-size:14px;outline:none}
+ .wallet-inputs textarea{min-height:115px;resize:vertical}.wallet-submit{border:0;border-radius:16px;padding:17px;background:linear-gradient(135deg,#10b981,#059669);color:white;font-size:14px;font-weight:900}.wallet-submit.withdraw-submit{background:linear-gradient(135deg,#facc15,#f59e0b);color:#201500}
+ .wallet-balances{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;border-top:1px solid rgba(196,181,253,.16);margin-top:18px;padding-top:14px;font-size:11px;color:#c4b5fd}
+
 </style>
 </head>
 <body>
@@ -232,33 +247,17 @@ body.light .status-banner{color:#1d4ed8}
   </section>
 
   <section id="tab-wallet" class="tab">
-    <div class="scard">
-      <div class="shd"><span>💼 የሂሳብ ማጠቃለያ (Wallet)</span></div>
-      <div class="wdual">
-        <div class="wsub"><div class="l">🎮 PLAY WALLET</div><div id="pwVal" class="a c-em">0.00</div><div class="h">ለመጫወቻ</div></div>
-        <div class="wsub"><div class="l">🏆 WIN WALLET</div><div id="wwVal" class="a c-gold">0.00</div><div class="h">የሙከራ ነጥቦች</div></div>
-      </div>
-      <div class="scard">
-        <div class="shd"><span>💳 ገንዘብ ማስገባት (Deposit)</span></div>
-        <div class="irow"><span>ዘዴ</span><select id="depMethod"><option>TeleBirr</option><option>CBE Birr</option></select></div>
-        <div class="irow"><span>መጠን (ብር)</span><input id="depAmount" type="number" min="20" max="1000000" placeholder="ለምሳሌ 100"></div>
-        <div class="irow"><span>Transaction ID</span><input id="depReference" type="text" maxlength="120" placeholder="የክፍያ SMS መለያ"></div>
-        <button class="cbtn" onclick="submitDeposit()">📤 የገቢ ጥያቄ ላክ</button>
-      </div>
-      <div class="scard">
-        <div class="shd"><span>💸 ገንዘብ ማውጣት (Withdraw)</span></div>
-        <div class="irow"><span>ዘዴ</span><select id="wdMethod"><option>TeleBirr</option><option>CBE Birr</option></select></div>
-        <div class="irow"><span>መጠን (ብር)</span><input id="wdAmount" type="number" min="100" max="1000000" placeholder="ቢያንስ 100"></div>
-        <div class="irow"><span>የአካውንት ቁጥር</span><input id="wdAccount" type="text" maxlength="64" placeholder="የሚቀበሉበት ስልክ/አካውንት"></div>
-        <button class="cbtn" onclick="submitWithdraw()">📥 የወጪ ጥያቄ ላክ</button>
-        <div class="spec">የወጪ ጥያቄ ሲላክ መጠኑ ከWin Wallet ይያዛል፤ አድሚን ካጸደቀ ወይም ከከለከለ ሁኔታው ይዘምናል።</div>
-      </div>
-      <div class="scard">
-        <div class="shd"><span>🏦 የክፍያ መረጃ (Payment Details)</span></div>
-        <div class="irow"><span style="color:var(--mut)">የአካውንት ስም፦</span><strong id="payName">HABTE GEBRIEL DEGAGA</strong></div>
-        <div class="irow"><span style="color:var(--mut)">TeleBirr፦</span><strong id="payTeleBirr">-</strong></div>
-        <div class="irow"><span style="color:var(--mut)">CBE Birr፦</span><strong id="payCbeBirr">-</strong></div>
-      </div>
+    <div class="wallet-shell">
+      <div class="wallet-heading">💼 የገንዘብ ማኔጅመንት (Real Wallet)</div>
+      <div class="wallet-total"><div class="wallet-total-label">👛 TOTAL WALLET BALANCE</div><div class="wallet-total-value"><span id="totalWallet">0.00</span> ETB</div><div class="wallet-total-note">ያለዎት ጠቅላላ የገንዘብ ሂሳብ</div></div>
+      <div class="wallet-actions"><button class="wallet-action deposit" onclick="showWalletForm('deposit')">↓ ገቢ</button><button class="wallet-action withdraw" onclick="showWalletForm('withdraw')">↑ ወጪ</button><button class="wallet-action transfer" onclick="winToPlay()">🔄 Transfer</button></div>
+      <div class="wallet-divider"></div>
+      <div class="wallet-section-title">📲 የገንዘብ ክፍያ ዘዴ ይምረጡ</div>
+      <div class="wallet-methods"><button type="button" class="wallet-method selected" id="methodTele" onclick="setWalletMethod('TeleBirr')"><span class="method-logo">📱</span><b>TeleBirr</b></button><button type="button" class="wallet-method" id="methodCbe" onclick="setWalletMethod('CBE Birr')"><span class="method-logo">🏦</span><b>CbeBirr</b></button></div>
+      <div class="wallet-account"><div class="wallet-account-top"><b id="walletMethodName">TeleBirr</b><strong id="walletAccountNumber">-</strong><button class="cmini" onclick="copyWalletAccount()">ቅዳ</button></div><div class="wallet-account-owner">የአካውንት ስም፦ <b id="walletAccountName">-</b></div></div>
+      <div class="wallet-instruction" id="walletDepositPanel">📩 ከላይ በመረጡት ዘዴ የሚፈልጉትን መጠን ይላኩ፤ ከዚያ SMS የTransaction ID ከታች ያስገቡ።<div class="wallet-inputs"><label>የሚያስገቡት መጠን (ብር)</label><input id="depAmount" type="number" min="20" max="1000000" placeholder="ለምሳሌ 100"><label>Transaction ID</label><textarea id="depReference" maxlength="120" placeholder="የክፍያ SMS መለያ እዚህ ያስገቡ..."></textarea><button class="wallet-submit" onclick="submitDeposit()">✔ መዝግቦ ጥያቄ ላክ</button></div></div>
+      <div class="wallet-instruction" id="walletWithdrawPanel" style="display:none">📤 ወደ እርስዎ አካውንት ለማውጣት ዝርዝሩን ይሙሉ።<div class="wallet-inputs"><label>የሚያወጡት መጠን (ብር)</label><input id="wdAmount" type="number" min="100" max="1000000" placeholder="ቢያንስ 100"><label>የሚቀበሉበት ስልክ/አካውንት</label><input id="wdAccount" type="text" maxlength="64" placeholder="የአካውንት ቁጥር"><button class="wallet-submit withdraw-submit" onclick="submitWithdraw()">✔ የወጪ ጥያቄ ላክ</button></div><div class="wallet-total-note">የወጪ ጥያቄው ከWin Wallet ይቀነሳል፤ አድሚን ካጸደቀ በኋላ ይፈጸማል።</div></div>
+      <div class="wallet-balances"><span>🎮 Play Wallet: <b id="pwVal">0.00</b> ብር</span><span>🏆 Win Wallet: <b id="wwVal">0.00</b> ብር</span></div>
     </div>
   </section>
 
@@ -445,6 +444,7 @@ function renderState(d) {
   document.getElementById('lWal').textContent = u.play_wallet.toFixed(2);
   document.getElementById('pwVal').textContent = u.play_wallet.toFixed(2);
   document.getElementById('wwVal').textContent = u.win_wallet.toFixed(2);
+  document.getElementById('totalWallet').textContent = (u.play_wallet + u.win_wallet).toFixed(2);
   document.getElementById('prName').textContent = u.name;
   document.getElementById('prId').textContent = u.uid;
   document.getElementById('prPly').textContent = u.matches_played;
@@ -453,6 +453,8 @@ function renderState(d) {
   document.getElementById('payName').textContent = cfg.telebirr_name || 'HABTE GEBRIEL DEGAGA';
   document.getElementById('payTeleBirr').textContent = cfg.telebirr_phone || '-';
   document.getElementById('payCbeBirr').textContent = cfg.cbe_phone || '-';
+  document.getElementById('walletAccountName').textContent = cfg.telebirr_name || 'HABTE GEBRIEL DEGAGA';
+  document.getElementById('walletAccountNumber').textContent = cfg.telebirr_phone || '-';
 
   if (r.phase === 'WAITING' || r.phase === 'COUNTDOWN') {
     document.getElementById('winOv').classList.remove('on');
@@ -657,6 +659,27 @@ async function winToPlay() {
     toast('✅ ' + res.amount.toFixed(2) + ' ብር ወደ Play Wallet ተዛውሯል!');
     await pollState();
   } catch (e) { toast('❌ ' + e.message); }
+}
+
+function showWalletForm(which) {
+  document.getElementById('walletDepositPanel').style.display = which === 'deposit' ? 'block' : 'none';
+  document.getElementById('walletWithdrawPanel').style.display = which === 'withdraw' ? 'block' : 'none';
+}
+function setWalletMethod(method) {
+  var tele = method === 'TeleBirr';
+  document.getElementById('depMethod').value = method;
+  document.getElementById('wdMethod').value = method;
+  document.getElementById('methodTele').classList.toggle('selected', tele);
+  document.getElementById('methodCbe').classList.toggle('selected', !tele);
+  document.getElementById('walletMethodName').textContent = method;
+  var cfg = latestState && latestState.config ? latestState.config : {};
+  document.getElementById('walletAccountNumber').textContent = tele ? (cfg.telebirr_phone || '-') : (cfg.cbe_phone || '-');
+  document.getElementById('walletAccountName').textContent = cfg.telebirr_name || 'HABTE GEBRIEL DEGAGA';
+}
+function copyWalletAccount() {
+  var t = document.getElementById('walletAccountNumber').textContent;
+  if (navigator.clipboard) navigator.clipboard.writeText(t).then(function(){toast('✅ ተቀድቷል');}).catch(function(){toast('ቁጥሩን በእጅ ይቅዱ');});
+  else toast(t);
 }
 
 async function submitDeposit() {
