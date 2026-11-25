@@ -30,7 +30,7 @@ class CursorProxy:
     self.cursor = cursor
     self.lastrowid = None
   def execute(self, sql, params=None):
-    sql = sql.replace('%s', '%s').replace('BEGIN', 'BEGIN')
+    sql = sql
     is_request_insert = sql.lstrip().upper().startswith('INSERT INTO REQUESTS ')
     if is_request_insert and 'RETURNING' not in sql.upper():
       sql = sql.rstrip().rstrip(';') + ' RETURNING id'
@@ -422,7 +422,7 @@ if bot:
   @bot.message_handler(func=lambda m: m.text == '👥 ግብዣ (Invite)')
   def c_inv(m):
     me = bot.get_me()
-    bot.send_message(m.chat.id, f'🎁 ለእያንዳንዱ ስኬታማ ግብዣ 15 POINTS ይሸለሙ!\n🔗 https://t.me/{me.username}%sstart={m.from_user.id}')
+    bot.send_message(m.chat.id, f'🎁 ለእያንዳንዱ ስኬታማ ግብዣ 15 POINTS ይሸለሙ!\n🔗 https://t.me/{me.username}?start={m.from_user.id}')
 
   @bot.message_handler(func=lambda m: m.text == '📝 ምዝገባ (Register)')
   def c_reg(m):
