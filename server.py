@@ -1,4 +1,6 @@
-import hashlib, hmac, json, math, os, random, secrets, sqlite3, threading, time, urllib.parse
+import hashlib, hmac, json, math, os, random, secrets, threading, time, urllib.parse
+import psycopg2
+from psycopg2.extras import DictCursor
 from contextlib import contextmanager
 from fastapi import FastAPI, Header, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -18,54 +20,91 @@ APP_URL = ('https://' + APP_URL[8:]) if APP_URL.lower().startswith('https://') e
 SUPPORT = os.environ.get('SUPPORT_USERNAME', '@your_support_username')
 TB_NAME = os.environ.get('TELEBIRR_NAME', 'DEMO ONLY')
 TB_PHONE = os.environ.get('TELEBIRR_PHONE', '')
-DB_PATH = os.environ.get('DB_PATH', 'dalol_bingo_demo.db')
+DATABASE_URL = os.environ.get('DATABASE_URL', '').strip()
 HOUSE_CUT, CD_SEC, CALL_SEC, WIN_SEC = 0.20, 25, 3.0, 10
 MIN_PLAYERS = int(os.environ.get('MIN_PLAYERS', '2') or '2')
 db_lock, room_lock = threading.RLock(), threading.RLock()
 
+class CursorProxy:
+  def __init__(self, cursor):
+    self.cursor = cursor
+    self.lastrowid = None
+  def execute(self, sql, params=None):
+    sql = sql.replace('%s', '%s').replace('BEGIN', 'BEGIN')
+    is_request_insert = sql.lstrip().upper().startswith('INSERT INTO REQUESTS ')
+    if is_request_insert and 'RETURNING' not in sql.upper():
+      sql = sql.rstrip().rstrip(';') + ' RETURNING id'
+    self.cursor.execute(sql, params or ())
+    if is_request_insert:
+      row = self.cursor.fetchone()
+      self.lastrowid = row['id'] if row else None
+    return self
+  @property
+  def rowcount(self): return self.cursor.rowcount
+  def fetchone(self): return self.cursor.fetchone()
+  def fetchall(self): return self.cursor.fetchall()
+  def __iter__(self): return iter(self.cursor)
+
+class DBConnection:
+  def __init__(self, connection): self.connection = connection
+  def execute(self, sql, params=None):
+    cur = self.connection.cursor()
+    return CursorProxy(cur).execute(sql, params)
+  def commit(self): self.connection.commit()
+  def rollback(self): self.connection.rollback()
+  def close(self): self.connection.close()
+
 @contextmanager
 def get_db():
+  if not DATABASE_URL:
+    raise RuntimeError('DATABASE_URL is missing. Add the Neon connection string in Render Environment.')
   with db_lock:
-    c = sqlite3.connect(DB_PATH, check_same_thread=False, timeout=30)
-    c.row_factory = sqlite3.Row
-    c.execute('PRAGMA foreign_keys=ON')
-    c.execute('PRAGMA busy_timeout=30000')
-    try: yield c; c.commit()
-    finally: c.close()
+    raw = psycopg2.connect(DATABASE_URL, sslmode='require', connect_timeout=15)
+    c = DBConnection(raw)
+    try:
+      yield c
+      raw.commit()
+    except Exception:
+      raw.rollback()
+      raise
+    finally:
+      raw.close()
 
 def init_db():
   with get_db() as c:
-    c.execute('PRAGMA journal_mode=WAL')
-    c.executescript("""
-    CREATE TABLE IF NOT EXISTS users (uid INTEGER PRIMARY KEY, name TEXT DEFAULT 'Player', phone TEXT,
-      play_wallet REAL DEFAULT 0, win_wallet REAL DEFAULT 0, matches_played INTEGER DEFAULT 0,
-      wins INTEGER DEFAULT 0, total_won REAL DEFAULT 0, referred_by INTEGER, created_at INTEGER);
-    CREATE TABLE IF NOT EXISTS transactions (id INTEGER PRIMARY KEY AUTOINCREMENT, uid INTEGER,
-      icon TEXT, title TEXT, amount REAL, created_at INTEGER);
-    CREATE TABLE IF NOT EXISTS requests (id INTEGER PRIMARY KEY AUTOINCREMENT, req_type TEXT, uid INTEGER,
-      amount REAL, method TEXT, details TEXT, status TEXT DEFAULT 'pending', created_at INTEGER, reference TEXT);
-    CREATE TABLE IF NOT EXISTS house_stats (id INTEGER PRIMARY KEY CHECK (id=1),
-      total_commission REAL DEFAULT 0, total_rounds INTEGER DEFAULT 0);
-    INSERT OR IGNORE INTO house_stats VALUES (1, 0, 0);
-    """)
-    cols = {row['name'] for row in c.execute('PRAGMA table_info(requests)').fetchall()}
-    if 'reference' not in cols:
-      c.execute('ALTER TABLE requests ADD COLUMN reference TEXT')
+    c.execute("""CREATE TABLE IF NOT EXISTS users (
+      uid BIGINT PRIMARY KEY, name TEXT DEFAULT 'Player', phone TEXT,
+      play_wallet DOUBLE PRECISION DEFAULT 0, win_wallet DOUBLE PRECISION DEFAULT 0,
+      matches_played INTEGER DEFAULT 0, wins INTEGER DEFAULT 0,
+      total_won DOUBLE PRECISION DEFAULT 0, referred_by BIGINT, created_at BIGINT)""")
+    c.execute("""CREATE TABLE IF NOT EXISTS transactions (
+      id BIGSERIAL PRIMARY KEY, uid BIGINT, icon TEXT, title TEXT,
+      amount DOUBLE PRECISION, created_at BIGINT)""")
+    c.execute("""CREATE TABLE IF NOT EXISTS requests (
+      id BIGSERIAL PRIMARY KEY, req_type TEXT, uid BIGINT,
+      amount DOUBLE PRECISION, method TEXT, details TEXT,
+      status TEXT DEFAULT 'pending', created_at BIGINT, reference TEXT)""")
+    c.execute("""ALTER TABLE requests ADD COLUMN IF NOT EXISTS reference TEXT""")
+    c.execute("""CREATE TABLE IF NOT EXISTS house_stats (
+      id INTEGER PRIMARY KEY CHECK (id=1),
+      total_commission DOUBLE PRECISION DEFAULT 0,
+      total_rounds BIGINT DEFAULT 0)""")
+    c.execute("INSERT INTO house_stats (id,total_commission,total_rounds) VALUES (1,0,0) ON CONFLICT (id) DO NOTHING")
     c.execute("CREATE UNIQUE INDEX IF NOT EXISTS uq_requests_reference ON requests(reference) WHERE reference IS NOT NULL AND reference <> ''")
 
 def ensure_user(uid, name='Player', ref=None):
   with get_db() as c:
-    r = c.execute('SELECT * FROM users WHERE uid=?', (uid,)).fetchone()
+    r = c.execute('SELECT * FROM users WHERE uid=%s', (uid,)).fetchone()
     if not r:
-      c.execute('INSERT INTO users (uid,name,play_wallet,win_wallet,referred_by,created_at) VALUES (?,?,0,0,?,?)', (uid, name or 'Player', ref, int(time.time())))
-      r = c.execute('SELECT * FROM users WHERE uid=?', (uid,)).fetchone()
+      c.execute('INSERT INTO users (uid,name,play_wallet,win_wallet,referred_by,created_at) VALUES (%s,%s,0,0,%s,%s)', (uid, name or 'Player', ref, int(time.time())))
+      r = c.execute('SELECT * FROM users WHERE uid=%s', (uid,)).fetchone()
     elif name and name != 'Player' and r['name'] != name:
-      c.execute('UPDATE users SET name=? WHERE uid=?', (name, uid))
-      r = c.execute('SELECT * FROM users WHERE uid=?', (uid,)).fetchone()
+      c.execute('UPDATE users SET name=%s WHERE uid=%s', (name, uid))
+      r = c.execute('SELECT * FROM users WHERE uid=%s', (uid,)).fetchone()
     return dict(r)
 
 def add_tx(c, uid, ic, title, amt):
-  c.execute('INSERT INTO transactions (uid,icon,title,amount,created_at) VALUES (?,?,?,?,?)', (uid, ic, title, float(amt), int(time.time())))
+  c.execute('INSERT INTO transactions (uid,icon,title,amount,created_at) VALUES (%s,%s,%s,%s,%s)', (uid, ic, title, float(amt), int(time.time())))
 
 def gen_card(no):
   rng = random.SystemRandom()
@@ -85,9 +124,9 @@ def finish_round(r, uid, name, cno, wl):
   prize = derash(r)
   comm = round(len(r['cards']) * r['stake'] - prize, 2)
   with get_db() as c:
-    c.execute('UPDATE users SET win_wallet=win_wallet+?, wins=wins+1, total_won=total_won+? WHERE uid=?', (prize, prize, uid))
+    c.execute('UPDATE users SET win_wallet=win_wallet+%s, wins=wins+1, total_won=total_won+%s WHERE uid=%s', (prize, prize, uid))
     add_tx(c, uid, '🏆', f'BINGO አሸነፉ! (Card #{cno})', prize)
-    c.execute('UPDATE house_stats SET total_commission=total_commission+?, total_rounds=total_rounds+1 WHERE id=1', (comm,))
+    c.execute('UPDATE house_stats SET total_commission=total_commission+%s, total_rounds=total_rounds+1 WHERE id=1', (comm,))
   r['phase'], r['win_until'] = 'WINNER', time.time() + WIN_SEC
   r['winner'] = {'uid': uid, 'name': name, 'card_no': cno, 'prize': prize, 'grid': r['cards'][cno]['grid'], 'win_line': wl}
 
@@ -111,7 +150,7 @@ def game_loop():
               secrets.SystemRandom().shuffle(r['deck'])
               with get_db() as c:
                 for uid in {v['uid'] for v in r['cards'].values()}:
-                  c.execute('UPDATE users SET matches_played=matches_played+1 WHERE uid=?', (uid,))
+                  c.execute('UPDATE users SET matches_played=matches_played+1 WHERE uid=%s', (uid,))
         elif r['phase'] == 'PLAYING' and now - r['tick'] >= CALL_SEC:
           r['tick'] = now
           if r['deck']: r['called'].insert(0, r['deck'].pop())
@@ -177,7 +216,7 @@ def adm_kb():
 def notify_req(rtype, uid, amt, md, det, reference=None):
   u = ensure_user(uid)
   with get_db() as c:
-    rid = c.execute('INSERT INTO requests (req_type,uid,amount,method,details,status,created_at,reference) VALUES (?,?,?,?,?,?,?,?)',
+    rid = c.execute('INSERT INTO requests (req_type,uid,amount,method,details,status,created_at,reference) VALUES (%s,%s,%s,%s,%s,%s,%s,%s)',
                     (rtype, uid, float(amt), md, det, 'pending', int(time.time()), reference)).lastrowid
   if not bot or ADMIN_ID == 0: return rid
   kb = IKB()
@@ -215,7 +254,7 @@ if bot:
   @bot.message_handler(content_types=['contact'])
   def c_contact(m):
     ensure_user(m.from_user.id, m.from_user.first_name or 'Player')
-    with get_db() as c: c.execute('UPDATE users SET phone=? WHERE uid=?', (m.contact.phone_number, m.from_user.id))
+    with get_db() as c: c.execute('UPDATE users SET phone=%s WHERE uid=%s', (m.contact.phone_number, m.from_user.id))
     bot.send_message(m.chat.id, f'✅ ተመዝግበዋል! ({m.contact.phone_number})', reply_markup=menu_kb(m.from_user.id))
     bot.send_message(m.chat.id, '🎰 ጨዋታውን ለመክፈት ከታች ይጫኑ 👇', reply_markup=play_kb('🎮 Play Now'))
 
@@ -251,7 +290,7 @@ if bot:
     tx = (m.text or '').strip()
     if len(tx) < 4 or len(tx) > 120: return bot.reply_to(m, '❌ ትክክለኛ Transaction ID ያስገቡ።')
     try: notify_req('deposit', m.from_user.id, amt, md, f'TX: {tx}', reference=tx)
-    except sqlite3.IntegrityError: return bot.reply_to(m, '❌ ይህ Transaction ID ቀድሞ ተጠቅሟል።')
+    except psycopg2.errors.UniqueViolation: return bot.reply_to(m, '❌ ይህ Transaction ID ቀድሞ ተጠቅሟል።')
     bot.reply_to(m, f'✅ የ {amt:.2f} POINTS ገቢ ጥያቄዎ ለአድሚን ተልኳል!', reply_markup=menu_kb(m.from_user.id))
 
   @bot.message_handler(commands=['withdraw'])
@@ -278,22 +317,22 @@ if bot:
       return bot.reply_to(m, '❌ ትክክለኛ የስልክ/አካውንት ቁጥር ያስገቡ።')
     try:
       with get_db() as c:
-        c.execute('BEGIN IMMEDIATE')
-        u = c.execute('SELECT win_wallet FROM users WHERE uid=?', (m.from_user.id,)).fetchone()
+        c.execute('BEGIN')
+        u = c.execute('SELECT win_wallet FROM users WHERE uid=%s', (m.from_user.id,)).fetchone()
         if not u or not math.isfinite(float(amt)) or amt < 100 or u['win_wallet'] < amt:
           return bot.reply_to(m, '❌ በቂ Win Wallet የለዎትም ወይም የገንዘብ መጠኑ ትክክል አይደለም!')
-        cur = c.execute('UPDATE users SET win_wallet=win_wallet-? WHERE uid=? AND win_wallet>=?', (amt, m.from_user.id, amt))
+        cur = c.execute('UPDATE users SET win_wallet=win_wallet-%s WHERE uid=%s AND win_wallet>=%s', (amt, m.from_user.id, amt))
         if cur.rowcount != 1:
           return bot.reply_to(m, '❌ በቂ Win Wallet የለዎትም!')
         add_tx(c, m.from_user.id, '💸', f'የወጪ ጥያቄ ({md})', -amt)
-        rid = c.execute('INSERT INTO requests (req_type,uid,amount,method,details,status,created_at) VALUES (?,?,?,?,?,?,?)',
+        rid = c.execute('INSERT INTO requests (req_type,uid,amount,method,details,status,created_at) VALUES (%s,%s,%s,%s,%s,%s,%s)',
                         ('withdraw', m.from_user.id, amt, md, f'Acc: {acc}', 'pending', int(time.time()))).lastrowid
       if bot and ADMIN_ID:
         kb = IKB(); kb.row(IBtn('✅ ተልኳል', callback_data=f'ap_wd_{rid}'), IBtn('❌ ሰርዝና መልስ', callback_data=f'rj_wd_{rid}'))
         try: bot.send_message(ADMIN_ID, f'🔔 አዲስ የወጪ ጥያቄ!\n\n🆔 #{rid}\n👤 {m.from_user.first_name or "Player"} (ID: {m.from_user.id})\n💵 {amt:.2f} POINTS\n🏦 {md}\n📱 {acc}', reply_markup=kb)
         except Exception: pass
       bot.reply_to(m, f'✅ የ {amt:.2f} POINTS የወጪ ጥያቄዎ ተመዝግቧል።', reply_markup=menu_kb(m.from_user.id))
-    except sqlite3.Error:
+    except psycopg2.Error:
       bot.reply_to(m, '❌ ጥያቄውን ማስመዝገብ አልተቻለም። እባክዎ እንደገና ይሞክሩ።')
 
   @bot.callback_query_handler(func=lambda c: c.data.startswith(('adm_', 'ap_', 'rj_')))
@@ -320,40 +359,40 @@ if bot:
       MIN_PLAYERS = 1 if MIN_PLAYERS >= 3 else MIN_PLAYERS + 1
       bot.edit_message_reply_markup(call.message.chat.id, call.message.message_id, reply_markup=adm_kb())
       bot.send_message(call.message.chat.id, f'⚙️ ዝቅተኛ ተጫዋች ወደ {MIN_PLAYERS} ተቀይሯል።')
-    elif d == 'adm_backup' and os.path.exists(DB_PATH):
-      with open(DB_PATH, 'rb') as f: bot.send_document(call.message.chat.id, f, caption='💾 DB Backup')
+    elif d == 'adm_backup':
+      bot.send_message(call.message.chat.id, '💾 Neon PostgreSQL ዳታቤዝ ነው። የፋይል backup ከዚህ ምናሌ አይደገፍም፤ በNeon dashboard የbackup/restore አማራጮችን ይጠቀሙ።')
     elif d == 'adm_bcast':
       bot.register_next_step_handler(bot.send_message(call.message.chat.id, '📢 ለሁሉም የሚላከውን መልዕክት ይጻፉ፦'), s_bcast)
     elif d.startswith(('ap_', 'rj_')):
       act, rt, rid = d.split('_')
       with get_db() as c:
-        c.execute('BEGIN IMMEDIATE')
-        rq = c.execute('SELECT * FROM requests WHERE id=?', (int(rid),)).fetchone()
+        c.execute('BEGIN')
+        rq = c.execute('SELECT * FROM requests WHERE id=%s', (int(rid),)).fetchone()
         if not rq or rq['status'] != 'pending': return bot.send_message(call.message.chat.id, '⚠️ ቀድሞ ተወስኗል።')
         uid, amt = rq['uid'], rq['amount']
         if rt == 'dep' and act == 'ap':
-          c.execute("UPDATE requests SET status='approved' WHERE id=?", (int(rid),))
-          c.execute('UPDATE users SET play_wallet=play_wallet+? WHERE uid=?', (amt, uid))
+          c.execute("UPDATE requests SET status='approved' WHERE id=%s", (int(rid),))
+          c.execute('UPDATE users SET play_wallet=play_wallet+%s WHERE uid=%s', (amt, uid))
           add_tx(c, uid, '💰', f'ገቢ ጸድቋል ({rq["method"]})', amt)
-          u = c.execute('SELECT referred_by FROM users WHERE uid=?', (uid,)).fetchone()
+          u = c.execute('SELECT referred_by FROM users WHERE uid=%s', (uid,)).fetchone()
           if u and u['referred_by']:
-            c.execute('UPDATE users SET play_wallet=play_wallet+15 WHERE uid=?', (u['referred_by'],))
-            c.execute('UPDATE users SET referred_by=NULL WHERE uid=?', (uid,))
+            c.execute('UPDATE users SET play_wallet=play_wallet+15 WHERE uid=%s', (u['referred_by'],))
+            c.execute('UPDATE users SET referred_by=NULL WHERE uid=%s', (uid,))
             add_tx(c, u['referred_by'], '🎁', 'የግብዣ ሽልማት', 15.0)
           bot.edit_message_text(call.message.text + f'\n\n✅ ጸድቋል (+{amt:.2f} POINTS)', call.message.chat.id, call.message.message_id)
           try: bot.send_message(uid, f'🎉 የ {amt:.2f} POINTS ገቢዎ ጸድቋል!')
           except Exception: pass
         elif rt == 'dep':
-          c.execute("UPDATE requests SET status='rejected' WHERE id=?", (int(rid),))
+          c.execute("UPDATE requests SET status='rejected' WHERE id=%s", (int(rid),))
           bot.edit_message_text(call.message.text + '\n\n❌ ተሰርዟል', call.message.chat.id, call.message.message_id)
         elif rt == 'wd' and act == 'ap':
-          c.execute("UPDATE requests SET status='paid' WHERE id=?", (int(rid),))
+          c.execute("UPDATE requests SET status='paid' WHERE id=%s", (int(rid),))
           bot.edit_message_text(call.message.text + f'\n\n✅ ተልኳል ({amt:.2f} POINTS)', call.message.chat.id, call.message.message_id)
           try: bot.send_message(uid, f'✅ የ {amt:.2f} POINTS ወጪዎ ተልኳል!')
           except Exception: pass
         else:
-          c.execute("UPDATE requests SET status='rejected' WHERE id=?", (int(rid),))
-          c.execute('UPDATE users SET win_wallet=win_wallet+? WHERE uid=?', (amt, uid))
+          c.execute("UPDATE requests SET status='rejected' WHERE id=%s", (int(rid),))
+          c.execute('UPDATE users SET win_wallet=win_wallet+%s WHERE uid=%s', (amt, uid))
           add_tx(c, uid, '↩️', 'ወጪ ተመልሷል', amt)
           bot.edit_message_text(call.message.text + '\n\n❌ ተሰርዞ ተመልሷል', call.message.chat.id, call.message.message_id)
 
@@ -365,9 +404,9 @@ if bot:
       if uid <= 0 or not math.isfinite(amt) or amt <= 0 or amt > 1000000: raise ValueError()
       ensure_user(uid)
       with get_db() as c:
-        if act == 'add': c.execute('UPDATE users SET play_wallet=play_wallet+? WHERE uid=?', (amt, uid)); add_tx(c, uid, '🎁', 'አድሚን ጨምሯል', amt)
-        else: c.execute('UPDATE users SET play_wallet=MAX(0,play_wallet-?) WHERE uid=?', (amt, uid)); add_tx(c, uid, '➖', 'አድሚን ቀንሷል', -amt)
-        pw = c.execute('SELECT play_wallet FROM users WHERE uid=?', (uid,)).fetchone()[0]
+        if act == 'add': c.execute('UPDATE users SET play_wallet=play_wallet+%s WHERE uid=%s', (amt, uid)); add_tx(c, uid, '🎁', 'አድሚን ጨምሯል', amt)
+        else: c.execute('UPDATE users SET play_wallet=GREATEST(0,play_wallet-%s) WHERE uid=%s', (amt, uid)); add_tx(c, uid, '➖', 'አድሚን ቀንሷል', -amt)
+        pw = c.execute('SELECT play_wallet FROM users WHERE uid=%s', (uid,)).fetchone()[0]
       bot.reply_to(m, f'✅ ተስተካክሏል! ID `{uid}` Play: {pw:.2f} POINTS', parse_mode='Markdown')
     except Exception: bot.reply_to(m, '❌ ምሳሌ፦ `528672685 100`', parse_mode='Markdown')
 
@@ -383,7 +422,7 @@ if bot:
   @bot.message_handler(func=lambda m: m.text == '👥 ግብዣ (Invite)')
   def c_inv(m):
     me = bot.get_me()
-    bot.send_message(m.chat.id, f'🎁 ለእያንዳንዱ ስኬታማ ግብዣ 15 POINTS ይሸለሙ!\n🔗 https://t.me/{me.username}?start={m.from_user.id}')
+    bot.send_message(m.chat.id, f'🎁 ለእያንዳንዱ ስኬታማ ግብዣ 15 POINTS ይሸለሙ!\n🔗 https://t.me/{me.username}%sstart={m.from_user.id}')
 
   @bot.message_handler(func=lambda m: m.text == '📝 ምዝገባ (Register)')
   def c_reg(m):
@@ -435,7 +474,7 @@ def api_state(stake: int = 10, x_tg_init_data: str = Header(default='')):
             'taken_cards': tk_c, 'my_cards': my_c, 'my_boards': {str(n): r['cards'][n]['grid'] for n in my_c},
             'called': r['called'], 'winner': r['winner'], 'winner_left': max(0, int(r['win_until'] - time.time())) if r['phase'] == 'WINNER' else 0}
   with get_db() as c:
-    txs = [dict(x) for x in c.execute('SELECT icon,title,amount,created_at FROM transactions WHERE uid=? ORDER BY id DESC LIMIT 25', (u['uid'],)).fetchall()]
+    txs = [dict(x) for x in c.execute('SELECT icon,title,amount,created_at FROM transactions WHERE uid=%s ORDER BY id DESC LIMIT 25', (u['uid'],)).fetchall()]
     top = [dict(x) for x in c.execute('SELECT name,total_won FROM users WHERE total_won>0 ORDER BY total_won DESC LIMIT 10').fetchall()]
   return {'user': {'uid': u['uid'], 'name': u['name'], 'play_wallet': round(u['play_wallet'],2), 'win_wallet': round(u['win_wallet'],2), 'matches_played': u['matches_played'], 'wins': u['wins']},
           'config': {'telebirr_name': TB_NAME, 'telebirr_phone': TB_PHONE, 'support': SUPPORT}, 'room': snap, 'history': txs, 'rank': top}
@@ -452,18 +491,18 @@ async def api_buy(req: Request, x_tg_init_data: str = Header(default='')):
     if cno in r['cards']:
       if r['cards'][cno]['uid'] == u['uid']:
         with get_db() as c:
-          c.execute('BEGIN IMMEDIATE')
-          c.execute('UPDATE users SET play_wallet=play_wallet+? WHERE uid=?', (st, u['uid']))
+          c.execute('BEGIN')
+          c.execute('UPDATE users SET play_wallet=play_wallet+%s WHERE uid=%s', (st, u['uid']))
           add_tx(c, u['uid'], '↩️', f'ካርድ #{cno} ተሰርዟል', st)
         del r['cards'][cno]
         return {'ok': True, 'action': 'removed'}
       raise HTTPException(400, f'ካርድ #{cno} ተይዟል!')
     if sum(1 for v in r['cards'].values() if v['uid'] == u['uid']) >= 4: raise HTTPException(400, 'እስከ 4 ካርድ ብቻ!')
     with get_db() as c:
-      c.execute('BEGIN IMMEDIATE')
-      wallet = c.execute('SELECT play_wallet FROM users WHERE uid=?', (u['uid'],)).fetchone()
+      c.execute('BEGIN')
+      wallet = c.execute('SELECT play_wallet FROM users WHERE uid=%s', (u['uid'],)).fetchone()
       if not wallet or wallet['play_wallet'] < st: raise HTTPException(400, 'በቂ Play Wallet የለዎትም! ገቢ ያድርጉ።')
-      c.execute('UPDATE users SET play_wallet=play_wallet-? WHERE uid=?', (st, u['uid'])); add_tx(c, u['uid'], '🎴', f'ካርድ #{cno} ({st} ነጥብ)', -st)
+      c.execute('UPDATE users SET play_wallet=play_wallet-%s WHERE uid=%s', (st, u['uid'])); add_tx(c, u['uid'], '🎴', f'ካርድ #{cno} ({st} ነጥብ)', -st)
     r['cards'][cno] = {'uid': u['uid'], 'name': u['name'], 'grid': gen_card(cno)}
     return {'ok': True, 'action': 'bought'}
 
@@ -487,11 +526,11 @@ async def api_claim(req: Request, x_tg_init_data: str = Header(default='')):
 async def api_transfer(x_tg_init_data: str = Header(default='')):
   u = auth_user(x_tg_init_data)
   with get_db() as c:
-    c.execute('BEGIN IMMEDIATE')
-    row = c.execute('SELECT win_wallet FROM users WHERE uid=?', (u['uid'],)).fetchone()
+    c.execute('BEGIN')
+    row = c.execute('SELECT win_wallet FROM users WHERE uid=%s', (u['uid'],)).fetchone()
     amt = row['win_wallet'] if row else 0
     if amt <= 0: raise HTTPException(400, 'በ Win Wallet ውስጥ ገንዘብ የለም!')
-    cur = c.execute('UPDATE users SET play_wallet=play_wallet+?, win_wallet=0 WHERE uid=? AND win_wallet=?', (amt, u['uid'], amt))
+    cur = c.execute('UPDATE users SET play_wallet=play_wallet+%s, win_wallet=0 WHERE uid=%s AND win_wallet=%s', (amt, u['uid'], amt))
     if cur.rowcount != 1: raise HTTPException(409, 'ባላንሱ ተቀይሯል፤ እንደገና ይሞክሩ።')
     add_tx(c, u['uid'], '🔄', 'ከ Win ወደ Play', amt)
   return {'ok': True, 'amount': amt}
