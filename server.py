@@ -551,16 +551,15 @@ def get_bonus_state(c, u):
     start = datetime.combine(day, datetime.min.time(), BONUS_TZ).replace(hour=start_hour)
     end_day = day if end_hour > start_hour else day + timedelta(days=1)
     end = datetime.combine(end_day, datetime.min.time(), BONUS_TZ).replace(hour=end_hour)
+    event_key = name + ':' + start.date().isoformat()
+    count = c.execute('SELECT COUNT(*) FROM bonus_claims WHERE bonus_key=%s', (event_key,)).fetchone()[0]
+    own = c.execute('SELECT 1 FROM bonus_claims WHERE uid=%s AND bonus_key=%s', (u['uid'], event_key)).fetchone()
     if current and current[0] == name:
-      event_day = start.date().isoformat()
-      event_key = name + ':' + event_day
-      count = c.execute('SELECT COUNT(*) FROM bonus_claims WHERE bonus_key=%s', (event_key,)).fetchone()[0]
-      own = c.execute('SELECT 1 FROM bonus_claims WHERE uid=%s AND bonus_key=%s', (u['uid'], event_key)).fetchone()
       status = 'claimed' if own else ('full' if count >= BONUS_LIMIT else 'open')
       remain = max(0, int((end-now).total_seconds()))
     else:
-      status, count, remain = 'closed', 0, max(0, int((start-now).total_seconds())) if start > now else 0
-      event_key = name + ':' + start.date().isoformat()
+      status = 'claimed' if own else ('full' if count >= BONUS_LIMIT else 'closed')
+      remain = max(0, int((start-now).total_seconds())) if start > now else 0
     cards.append({'id':name,'label':label,'key':event_key,'reward':BONUS_REWARD,'count':count,'limit':BONUS_LIMIT,'status':status,'remaining_seconds':remain,'starts_at':start.isoformat(),'ends_at':end.isoformat()})
   rounds = int(u.get('matches_played') or 0)
   lifetime_key = 'ten_rounds'
