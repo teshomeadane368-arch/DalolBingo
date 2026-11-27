@@ -127,21 +127,26 @@ BOT_NAMES = [
   'Yared K.', 'Genet T.', 'Mulu D.', 'Fitsum A.', 'Elsa M.', 'Kaleb S.',
   'Aster G.', 'Tewodros B.', 'Rahel D.', 'Nardos K.'
 ]
-mk_room = lambda s: {'stake': s, 'phase': 'WAITING', 'countdown': CD_SEC, 'cards': {}, 'called': [], 'deck': [], 'tick': time.time(), 'winner': None, 'win_until': 0.0}
+mk_room = lambda s: {'stake': s, 'phase': 'WAITING', 'countdown': CD_SEC, 'cards': {}, 'called': [], 'deck': [], 'tick': time.time(), 'winner': None, 'win_until': 0.0, 'bot_target': random.randint(30, 40), 'bot_names': [], 'next_bot_at': time.time() + random.uniform(1.0, 3.0)}
 rooms = {10: mk_room(10), 20: mk_room(20), 50: mk_room(50)}
 n_players = lambda r: len({v['uid'] for v in r['cards'].values()})
 human_cards = lambda r: sum(1 for v in r['cards'].values() if not v.get('is_bot'))
 derash = lambda r: round(human_cards(r) * r['stake'] * (1.0 - HOUSE_CUT), 2)
 
-def add_test_bots(r):
-  if not TEST_BOTS_ENABLED or any(v.get('is_bot') for v in r['cards'].values()):
+def add_one_test_bot(r):
+  if not TEST_BOTS_ENABLED or sum(1 for v in r['cards'].values() if v.get('is_bot')) >= r['bot_target']:
     return
   available = [n for n in range(1, 401) if n not in r['cards']]
-  count = random.randint(30, 40)
-  random.SystemRandom().shuffle(available)
-  names = random.sample(BOT_NAMES, min(count, len(BOT_NAMES)))
-  for cno, name in zip(available[:len(names)], names):
-    r['cards'][cno] = {'uid': -(100000 + cno), 'name': name, 'grid': gen_card(cno), 'is_bot': True}
+  used_names = r.get('bot_names', [])
+  names = [name for name in BOT_NAMES if name not in used_names]
+  if not available or not names:
+    r['bot_target'] = sum(1 for v in r['cards'].values() if v.get('is_bot'))
+    return
+  cno = random.choice(available)
+  name = random.choice(names)
+  r['cards'][cno] = {'uid': -(100000 + cno), 'name': name, 'grid': gen_card(cno), 'is_bot': True}
+  r.setdefault('bot_names', []).append(name)
+  r['next_bot_at'] = time.time() + random.uniform(1.0, 3.5)
 
 def bot_winner(r):
   called = set(r['called'])
@@ -165,7 +170,7 @@ def finish_round(r, uid, name, cno, wl):
   r['winner'] = {'uid': uid, 'name': name, 'card_no': cno, 'prize': prize, 'grid': r['cards'][cno]['grid'], 'win_line': wl}
 
 def reset_room(r):
-  r.update({'phase': 'WAITING', 'countdown': CD_SEC, 'cards': {}, 'called': [], 'deck': [], 'winner': None, 'tick': time.time()})
+  r.update({'phase': 'WAITING', 'countdown': CD_SEC, 'cards': {}, 'called': [], 'deck': [], 'winner': None, 'tick': time.time(), 'bot_target': random.randint(30, 40), 'bot_names': [], 'next_bot_at': time.time() + random.uniform(1.0, 3.0)})
 
 def game_loop():
   while True:
@@ -173,8 +178,13 @@ def game_loop():
     with room_lock:
       for r in rooms.values():
         pc = n_players(r)
-        if r['phase'] == 'WAITING' and pc >= MIN_PLAYERS:
-          r.update({'phase': 'COUNTDOWN', 'countdown': CD_SEC, 'tick': now})
+        if r['phase'] == 'WAITING':
+          if TEST_BOTS_ENABLED and now >= r.get('next_bot_at', now + 2):
+            add_one_test_bot(r)
+          bot_total = sum(1 for v in r['cards'].values() if v.get('is_bot'))
+          bots_ready = (not TEST_BOTS_ENABLED) or bot_total >= r.get('bot_target', 30)
+          if bots_ready and pc >= MIN_PLAYERS:
+            r.update({'phase': 'COUNTDOWN', 'countdown': CD_SEC, 'tick': now})
         elif r['phase'] == 'COUNTDOWN':
           if pc < MIN_PLAYERS: r.update({'phase': 'WAITING', 'countdown': CD_SEC})
           elif now - r['tick'] >= 1.0:
@@ -183,7 +193,7 @@ def game_loop():
               r.update({'phase': 'PLAYING', 'called': [], 'deck': list(range(1, 76)), 'tick': now})
               secrets.SystemRandom().shuffle(r['deck'])
               with get_db() as c:
-                for uid in {v['uid'] for v in r['cards'].values()}:
+                for uid in {v['uid'] for v in r['cards'].values() if not v.get('is_bot')}:
                   c.execute('UPDATE users SET matches_played=matches_played+1 WHERE uid=%s', (uid,))
         elif r['phase'] == 'PLAYING' and now - r['tick'] >= CALL_SEC:
           r['tick'] = now
@@ -546,7 +556,6 @@ async def api_buy(req: Request, x_tg_init_data: str = Header(default='')):
       if not wallet or wallet['play_wallet'] < st: raise HTTPException(400, 'በቂ Play Wallet የለዎትም! ገቢ ያድርጉ።')
       c.execute('UPDATE users SET play_wallet=play_wallet-%s WHERE uid=%s', (st, u['uid'])); add_tx(c, u['uid'], '🎴', f'ካርድ #{cno} ({st} ብር)', -st)
     r['cards'][cno] = {'uid': u['uid'], 'name': u['name'], 'grid': gen_card(cno), 'is_bot': False}
-    add_test_bots(r)
     return {'ok': True, 'action': 'bought'}
 
 @app.post('/api/claim_bingo')
