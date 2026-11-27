@@ -145,7 +145,9 @@ def add_one_test_bot(r):
     return
   cno = random.choice(available)
   name = random.choice(names)
-  bot_credits = random.randint(500, 2000)\n  bot_credits -= r['stake']  # Simulated bot wallet pays the same card fee.\n  r['cards'][cno] = {'uid': -(100000 + cno), 'name': name, 'grid': gen_card(cno), 'is_bot': True, 'credits_paid': r['stake'], 'simulated_credits_left': bot_credits}
+  bot_credits = random.randint(500, 2000)
+  bot_credits -= r['stake']  # Simulated bot wallet pays the same card fee.
+  r['cards'][cno] = {'uid': -(100000 + cno), 'name': name, 'grid': gen_card(cno), 'is_bot': True, 'credits_paid': r['stake'], 'simulated_credits_left': bot_credits}
   r.setdefault('bot_names', []).append(name)
   r['next_bot_at'] = time.time() + random.uniform(0.08, 0.25)
 
