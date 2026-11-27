@@ -656,7 +656,7 @@ function renderState(d) {
       }).join('');
     }
 
-    if (r.phase === 'WINNER' && r.winner) {
+    if (r.phase === 'WINNER' && r.winner && document.getElementById('tab-bingo').classList.contains('on')) {
       var w = r.winner;
       if (lastWinnerCard !== w.card_no) {
         lastWinnerCard = w.card_no;
@@ -852,6 +852,13 @@ function goTab(t) {
   document.querySelectorAll('.nbtn').forEach(function(e) { e.classList.remove('on'); });
   document.getElementById('tab-' + t).classList.add('on');
   document.querySelector('.nbtn[data-t="' + t + '"]').classList.add('on');
+  var winOv = document.getElementById('winOv');
+  var room = latestState && latestState.room;
+  if (t === 'bingo' && room && room.phase === 'WINNER' && room.winner) {
+    winOv.classList.add('on');
+  } else {
+    winOv.classList.remove('on');
+  }
 }
 function bonusClock(sec) {
   sec=Math.max(0,Number(sec||0));var hh=Math.floor(sec/3600),mm=Math.floor((sec%3600)/60),ss=sec%60;
