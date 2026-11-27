@@ -218,6 +218,39 @@ body.light .status-banner{color:#1d4ed8}
  .wallet-inputs textarea{min-height:115px;resize:vertical}.wallet-submit{border:0;border-radius:16px;padding:17px;background:linear-gradient(135deg,#10b981,#059669);color:white;font-size:14px;font-weight:900}.wallet-submit.withdraw-submit{background:linear-gradient(135deg,#facc15,#f59e0b);color:#201500}
  .wallet-balances{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;border-top:1px solid rgba(196,181,253,.16);margin-top:18px;padding-top:14px;font-size:11px;color:#c4b5fd}
 
+
+/* Bonus Center visual system */
+.bonus-hero{position:relative;overflow:hidden;padding:22px 18px 20px;border-radius:22px;margin:4px 0 14px;background:radial-gradient(circle at 85% 15%,rgba(255,211,92,.34),transparent 34%),linear-gradient(135deg,#24113f 0%,#54217a 48%,#a34a36 100%);border:1px solid rgba(251,191,36,.48);box-shadow:0 12px 30px rgba(0,0,0,.32),0 0 24px rgba(245,158,11,.12)}
+.bonus-hero:after{content:"✦  ✧  ✦";position:absolute;right:13px;top:12px;color:rgba(255,255,255,.32);font-size:22px;letter-spacing:9px}
+.bonus-kicker{font-size:10px;font-weight:900;letter-spacing:1.5px;color:#fcdba0}
+.bonus-title{font-size:27px;font-weight:950;color:#fff;margin:5px 0 4px}
+.bonus-sub{font-size:12px;line-height:1.6;color:#f8e9df;max-width:270px}
+.bonus-gift{position:absolute;right:19px;bottom:15px;font-size:58px;filter:drop-shadow(0 5px 12px rgba(0,0,0,.3));transform:rotate(-9deg)}
+.bonus-stats{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:13px}
+.bonus-stat{background:linear-gradient(145deg,var(--card),var(--card2));border:1px solid var(--bd);border-radius:15px;padding:13px;box-shadow:var(--sh)}
+.bonus-stat .bs-label{font-size:10px;color:var(--mut);font-weight:800;margin-bottom:5px}
+.bonus-stat .bs-value{font-size:21px;font-weight:950;color:var(--gold2)}
+.bonus-card{position:relative;overflow:hidden;background:linear-gradient(145deg,var(--card),var(--card2));border:1px solid var(--bd);border-radius:18px;padding:15px;margin-bottom:12px;box-shadow:var(--sh)}
+.bonus-card-head{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.bonus-icon{width:42px;height:42px;flex:0 0 42px;display:flex;align-items:center;justify-content:center;border-radius:13px;background:linear-gradient(135deg,#ec4899,#8b5cf6);font-size:21px;box-shadow:0 5px 16px rgba(168,85,247,.32)}
+.bonus-card-title{font-size:14px;font-weight:900}
+.bonus-card-desc{font-size:11px;color:var(--mut);line-height:1.55;margin-top:3px}
+.bonus-reward{margin-left:auto;color:#2dd4bf;font-size:18px;font-weight:950;white-space:nowrap}
+.bonus-steps{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin:13px 0}
+.bonus-step{min-width:0;text-align:center;padding:8px 3px;border-radius:10px;background:rgba(148,163,184,.08);border:1px solid var(--bd)}
+.bonus-step b{display:block;font-size:15px;color:var(--gold2);margin-bottom:3px}
+.bonus-step span{font-size:9px;line-height:1.3;color:var(--mut);display:block}
+.bonus-link{display:flex;align-items:center;gap:7px;padding:10px;border-radius:11px;background:rgba(148,163,184,.1);border:1px dashed var(--bdg);margin:10px 0}
+.bonus-link input{min-width:0;flex:1;background:transparent;border:0;outline:0;color:var(--txt);font-size:10px}
+.bonus-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.bonus-btn{border:0;border-radius:11px;padding:12px 8px;font-size:12px;font-weight:900;cursor:pointer}
+.bonus-btn.primary{background:linear-gradient(135deg,#f59e0b,#fbbf24);color:#241306;box-shadow:0 5px 15px rgba(245,158,11,.24)}
+.bonus-btn.secondary{background:rgba(139,92,246,.17);border:1px solid rgba(167,139,250,.38);color:#c4b5fd}
+.bonus-note{font-size:10px;color:var(--mut);line-height:1.55;margin-top:10px}
+.bonus-history-title{font-size:13px;font-weight:900;margin:17px 2px 9px}
+body.light .bonus-card,body.light .bonus-stat{background:#fff}
+@media(max-width:350px){.bonus-steps{gap:3px}.bonus-step span{font-size:8px}.bonus-title{font-size:24px}}
+
 </style>
 </head>
 <body>
@@ -318,9 +351,41 @@ body.light .status-banner{color:#1d4ed8}
     <div id="hList"></div>
   </section>
 
-  <section id="tab-rank" class="tab">
-    <div class="shd"><span>🏆 ከፍተኛ አሸናፊዎች</span></div>
-    <div id="rList"></div>
+  <section id="tab-bonus" class="tab">
+    <div class="bonus-hero">
+      <div class="bonus-kicker">DALOL BINGO REWARDS</div>
+      <div class="bonus-title">Bonus Center 🎁</div>
+      <div class="bonus-sub">Invite friends, grow your Bingo circle, and earn bonus credits together.</div>
+      <div class="bonus-gift">🎁</div>
+    </div>
+    <div class="bonus-stats">
+      <div class="bonus-stat"><div class="bs-label">BONUS EARNED</div><div class="bs-value"><span id="bonusEarned">0.00</span> <small style="font-size:11px">ETB</small></div></div>
+      <div class="bonus-stat"><div class="bs-label">PENDING INVITES</div><div class="bs-value" id="bonusPending">0</div></div>
+    </div>
+    <div class="bonus-card">
+      <div class="bonus-card-head">
+        <div class="bonus-icon">👥</div>
+        <div><div class="bonus-card-title">Invite friends & earn</div><div class="bonus-card-desc">Your friend joins through your link and makes their first approved deposit.</div></div>
+        <div class="bonus-reward">+15 <small style="font-size:10px">ETB</small></div>
+      </div>
+      <div class="bonus-steps">
+        <div class="bonus-step"><b>1</b><span>Share your link</span></div>
+        <div class="bonus-step"><b>2</b><span>Friend joins</span></div>
+        <div class="bonus-step"><b>3</b><span>First deposit approved</span></div>
+        <div class="bonus-step"><b>4</b><span>Get 15 credits</span></div>
+      </div>
+      <div class="bonus-link"><span>🔗</span><input id="bonusInviteLink" readonly value="Loading your invite link..."><button class="cmini" onclick="copyBonusLink()">COPY</button></div>
+      <div class="bonus-actions">
+        <button class="bonus-btn primary" onclick="shareBonusLink()">↗ Invite Friends</button>
+        <button class="bonus-btn secondary" onclick="goTab('history')">🎁 Bonus History</button>
+      </div>
+      <div class="bonus-note">The 15 ETB reward is added to your Play Wallet after your invited friend's first deposit is approved. Each invited account can trigger this reward once.</div>
+    </div>
+    <div class="bonus-history-title">✨ How rewards work</div>
+    <div class="bonus-card">
+      <div class="bonus-card-title">A simple way to earn more</div>
+      <div class="bonus-card-desc">Share your personal invitation link with friends. When an invited player completes their first approved deposit, 15 ETB is credited to your Play Wallet. You can see the credit in your Wallet transaction history.</div>
+    </div>
   </section>
 
   <section id="tab-profile" class="tab">
@@ -345,7 +410,7 @@ body.light .status-banner{color:#1d4ed8}
     <button class="nbtn on" data-t="bingo" onclick="goTab('bingo')"><span class="ni">🎮</span><span>BINGO</span></button>
     <button class="nbtn" data-t="wallet" onclick="goTab('wallet')"><span class="ni">👛</span><span>WALLET</span></button>
     <button class="nbtn" data-t="history" onclick="goTab('history')"><span class="ni">🕒</span><span>HISTORY</span></button>
-    <button class="nbtn" data-t="rank" onclick="goTab('rank')"><span class="ni">🏆</span><span>RANK</span></button>
+    <button class="nbtn" data-t="bonus" onclick="goTab('bonus')"><span class="ni">🎁</span><span>BONUS</span></button>
     <button class="nbtn" data-t="profile" onclick="goTab('profile')"><span class="ni">👤</span><span>PROFILE</span></button>
   </nav>
 </div>
@@ -637,6 +702,13 @@ function renderState(d) {
     }
   }
 
+  var bonus = d.bonus || {};
+  document.getElementById('bonusEarned').textContent = Number(bonus.earned_total || 0).toFixed(2);
+  document.getElementById('bonusPending').textContent = bonus.pending_invites || 0;
+  var inviteUrl = bonus.bot_username ? 'https://t.me/' + bonus.bot_username + '?start=' + u.uid : '';
+  var inviteInput = document.getElementById('bonusInviteLink');
+  if (inviteInput) inviteInput.value = inviteUrl || 'Invite link unavailable — bot username not set';
+
   var hl = document.getElementById('hList');
   if (!d.history.length) {
     hl.innerHTML = '<div class="scard" style="text-align:center;color:var(--mut)">ምንም ታሪክ የለም።</div>';
@@ -649,15 +721,7 @@ function renderState(d) {
     }).join('');
   }
 
-  var rl = document.getElementById('rList');
-  if (!d.rank.length) {
-    rl.innerHTML = '<div class="scard" style="text-align:center;color:var(--mut)">ገና አሸናፊ አልተመዘገበም — የመጀመሪያው አሸናፊ ይሁኑ!</div>';
-  } else {
-    var md = ['🥇','🥈','🥉'];
-    rl.innerHTML = d.rank.map(function(x, i) {
-      return '<div class="rrow ' + (i === 0 ? 't1' : '') + '"><div class="hl"><div class="hico" style="font-weight:800">' + (i < 3 ? md[i] : (i + 1)) + '</div><div style="font-size:13.5px;font-weight:700">' + x.name + '</div></div><div class="c-gold" style="font-size:13.5px;font-weight:800">' + x.total_won.toFixed(2) + ' ብር</div></div>';
-    }).join('');
-  }
+
 }
 
 async function pollState() {
@@ -813,6 +877,17 @@ function goTab(t) {
   document.getElementById('tab-' + t).classList.add('on');
   document.querySelector('.nbtn[data-t="' + t + '"]').classList.add('on');
 }
+function copyBonusLink() {
+  var v = document.getElementById('bonusInviteLink').value;
+  if (!v || v.indexOf('https://') !== 0) return toast('Invite link is not ready yet');
+  cpTxt(v, 'Invite link copied!');
+}
+function shareBonusLink() {
+  var v = document.getElementById('bonusInviteLink').value;
+  if (!v || v.indexOf('https://') !== 0) return toast('Invite link is not ready yet');
+  var shareUrl = 'https://t.me/share/url?url=' + encodeURIComponent(v) + '&text=' + encodeURIComponent('Join me on DALOL BINGO!');
+  if (tg && tg.openTelegramLink) tg.openTelegramLink(shareUrl); else window.open(shareUrl, '_blank');
+}
 function openDrw(w) {
   var d = document.getElementById('depDrw'), wd = document.getElementById('wdDrw');
   if (w === 'dep') { d.classList.toggle('on'); wd.classList.remove('on'); }
@@ -829,7 +904,7 @@ function cpTxt(t, m) {
 }
 
 var initialTab = new URLSearchParams(window.location.search).get('tab');
-if (initialTab && ['bingo','wallet','history','rank','profile'].indexOf(initialTab) >= 0) goTab(initialTab);
+if (initialTab && ['bingo','wallet','history','bonus','profile'].indexOf(initialTab) >= 0) goTab(initialTab);
 pollState();
 setInterval(pollState, 1200);
 </script>
