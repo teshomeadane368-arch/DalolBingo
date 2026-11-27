@@ -536,6 +536,7 @@ BONUS_REWARD = 10
 BONUS_LIMIT = 100
 
 def get_bonus_state(c, u):
+  rounds = int(u.get('matches_played') or 0)
   now = datetime.now(BONUS_TZ)
   day = now.date()
   current = None
