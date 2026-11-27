@@ -18,6 +18,7 @@ APP_URL = (os.environ.get('APP_URL') or DEFAULT_URL).strip().strip("'\"").rstrip
 APP_URL = ('https://' + APP_URL[8:]) if APP_URL.lower().startswith('https://') else DEFAULT_URL
 
 SUPPORT = os.environ.get('SUPPORT_USERNAME', '@your_support_username')
+BOT_USERNAME = os.environ.get('BOT_USERNAME', '').strip().lstrip('@')
 TB_NAME = os.environ.get('TELEBIRR_NAME', 'DEMO ONLY')
 TB_PHONE = os.environ.get('TELEBIRR_PHONE', '')
 CB_NAME = os.environ.get('CBE_BIRR_NAME', TB_NAME)
@@ -490,7 +491,10 @@ if bot:
   def c_rules(m): bot.send_message(m.chat.id, '📜 ህግና መመሪያ\n• ቢያንስ 2 ተጫዋቾች ካርድ ሲገዙ ይጀምራል።\n• ካርድ: 10/20/50 ብር (እስከ 4)።\n• ደራሽ: 80% ለአሸናፊው።\n• ዝቅተኛ ወጪ: 100 ብር።')
 
 def run_bot():
+  global BOT_USERNAME
   if not bot: return print('WARNING: BOT_TOKEN not set; bot polling skipped.')
+  try: BOT_USERNAME = bot.get_me().username or BOT_USERNAME
+  except Exception as e: print('Bot username lookup failed:', e)
   while True:
     try: bot.infinity_polling(timeout=20, long_polling_timeout=15)
     except Exception as e: print('Bot error:', e); time.sleep(5)
@@ -530,8 +534,11 @@ def api_state(stake: int = 10, x_tg_init_data: str = Header(default='')):
   with get_db() as c:
     txs = [dict(x) for x in c.execute('SELECT icon,title,amount,created_at FROM transactions WHERE uid=%s ORDER BY id DESC LIMIT 25', (u['uid'],)).fetchall()]
     top = [dict(x) for x in c.execute('SELECT name,total_won FROM users WHERE total_won>0 ORDER BY total_won DESC LIMIT 10').fetchall()]
+    pending_invites = c.execute('SELECT COUNT(*) FROM users WHERE referred_by=%s', (u['uid'],)).fetchone()[0]
+    earned_bonus = c.execute("SELECT COALESCE(SUM(amount),0) FROM transactions WHERE uid=%s AND title='የግብዣ ሽልማት'", (u['uid'],)).fetchone()[0]
   return {'user': {'uid': u['uid'], 'name': u['name'], 'play_wallet': round(u['play_wallet'],2), 'win_wallet': round(u['win_wallet'],2), 'matches_played': u['matches_played'], 'wins': u['wins']},
-          'config': {'telebirr_name': TB_NAME, 'telebirr_phone': TB_PHONE, 'cbe_name': CB_NAME, 'cbe_phone': CB_PHONE, 'support': SUPPORT}, 'room': snap, 'history': txs, 'rank': top}
+          'config': {'telebirr_name': TB_NAME, 'telebirr_phone': TB_PHONE, 'cbe_name': CB_NAME, 'cbe_phone': CB_PHONE, 'support': SUPPORT}, 'room': snap, 'history': txs, 'rank': top,
+          'bonus': {'reward_per_invite': 15, 'pending_invites': pending_invites, 'earned_total': round(float(earned_bonus or 0),2), 'bot_username': BOT_USERNAME}}
 
 @app.post('/api/buy_card')
 async def api_buy(req: Request, x_tg_init_data: str = Header(default='')):
