@@ -867,10 +867,10 @@ function bonusClock(sec) {
 function renderBonusCards(bonus) {
   var daily=bonus.daily||[],labels={morning:'የጠዋት ቦነስ',midday:'የቀትር ቦነስ',evening:'የማታ ቦነስ'},icons={morning:'🌅',midday:'☀️',evening:'🌙'},times={morning:'ጠዋት 8:00 – ከሰዓት 1:00',midday:'ከሰዓት 1:00 – 7:00',evening:'ማታ 7:00 – ጠዋት 8:00'};
   var html=daily.filter(function(x){return x.id!=='ten_rounds';}).map(function(x){
-    var pct=Math.min(100,Math.round((x.count||0)*100/(x.limit||100))),active=x.status==='open',claimed=x.status==='claimed',full=x.status==='full';
-    var timer=active?'የሚቀረው ጊዜ '+bonusClock(x.remaining_seconds):(x.remaining_seconds>0?'እስኪከፈት የሚቀረው '+bonusClock(x.remaining_seconds):'የዛሬው ጊዜ ተዘግቷል');
-    var btn=claimed?'ቦነሱን ወስደዋል ✓':full?'100 ተጫዋቾች ወስደዋል':active?'10 ብር ውሰድ':'ገና አልተከፈተም';
-    var note=claimed?'ቦነሱን ቀድሞ ወስደዋል።':full?'የዛሬው ቦነስ ተሟልቷል።':active?'አሁን ቦነሱን መውሰድ ይችላሉ።':'በተመደበው ሰዓት ይከፈታል።';
+    var pct=Math.min(100,Math.round((x.count||0)*100/(x.limit||100))),active=x.status==='open',claimed=x.status==='claimed',full=x.status==='full',locked=x.status==='locked';
+    var timer=locked?'10 ዙር እስኪጫወቱ ድረስ':active?'የሚቀረው ጊዜ '+bonusClock(x.remaining_seconds):(x.remaining_seconds>0?'እስኪከፈት የሚቀረው '+bonusClock(x.remaining_seconds):'የዛሬው ጊዜ ተዘግቷል');
+    var btn=claimed?'ቦነሱን ወስደዋል ✓':full?'100 ተጫዋቾች ወስደዋል':locked?'10 ዙር ይጫወቱ':active?'10 ብር ውሰድ':'ገና አልተከፈተም';
+    var note=claimed?'ቦነሱን ቀድሞ ወስደዋል።':full?'የዛሬው ቦነስ ተሟልቷል።':locked?'ማንኛውንም ቦነስ ለመውሰድ 10 ዙር መጫወት አለብዎት።':active?'አሁን ቦነሱን መውሰድ ይችላሉ።':'በተመደበው ሰዓት ይከፈታል።';
     return '<div class="daily-bonus"><div class="daily-bonus-top"><div class="daily-bonus-icon">'+icons[x.id]+'</div><div><div class="daily-bonus-name">'+labels[x.id]+'</div><div class="daily-bonus-time">'+times[x.id]+'</div></div><div class="daily-bonus-prize">10 <small style="font-size:10px">ብር</small></div></div><div class="daily-bonus-track"><div class="daily-bonus-fill" style="width:'+pct+'%"></div></div><div class="daily-bonus-meta"><span>👥 '+(x.count||0)+' / 100 ተጫዋቾች</span><span>⏱ '+timer+'</span></div><button class="daily-bonus-btn '+(claimed?'claimed':'')+'" '+(!active?'disabled':'')+' onclick="claimBonus(\''+x.id+'\')">'+btn+'</button><div class="daily-bonus-note">'+note+' በየቀኑ 100 የተለያዩ ተጫዋቾች ብቻ ይወስዳሉ።</div></div>';
   }).join('');
   document.getElementById('dailyBonusCards').innerHTML=html;
