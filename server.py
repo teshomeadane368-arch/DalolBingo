@@ -1,4 +1,6 @@
 import hashlib, hmac, json, math, os, random, secrets, threading, time, urllib.parse
+from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
 import psycopg2
 from psycopg2.extras import DictCursor
 from contextlib import contextmanager
@@ -94,6 +96,11 @@ def init_db():
       total_rounds BIGINT DEFAULT 0)""")
     c.execute("INSERT INTO house_stats (id,total_commission,total_rounds) VALUES (1,0,0) ON CONFLICT (id) DO NOTHING")
     c.execute("CREATE UNIQUE INDEX IF NOT EXISTS uq_requests_reference ON requests(reference) WHERE reference IS NOT NULL AND reference <> ''")
+    c.execute("""CREATE TABLE IF NOT EXISTS bonus_claims (
+      id BIGSERIAL PRIMARY KEY, uid BIGINT NOT NULL, bonus_key TEXT NOT NULL,
+      amount DOUBLE PRECISION NOT NULL, claimed_at BIGINT NOT NULL,
+      UNIQUE(uid, bonus_key))""")
+    c.execute("CREATE INDEX IF NOT EXISTS idx_bonus_claims_key ON bonus_claims(bonus_key)")
 
 def ensure_user(uid, name='Player', ref=None):
   with get_db() as c:
@@ -519,6 +526,91 @@ def head_root(): return Response(status_code=200)
 @app.get('/', response_class=HTMLResponse)
 def serve_app(): return FileResponse('index.html') if os.path.exists('index.html') else HTMLResponse('index.html missing', 404)
 
+BONUS_TZ = ZoneInfo('Africa/Addis_Ababa')
+BONUS_DAILY = [
+  ('morning', 'የጠዋት ቦነስ', 8, 13),
+  ('midday', 'የቀን መካከል ቦነስ', 13, 19),
+  ('evening', 'የማታ ቦነስ', 19, 8),
+]
+BONUS_REWARD = 50
+BONUS_LIMIT = 100
+
+def get_bonus_state(c, u):
+  now = datetime.now(BONUS_TZ)
+  day = now.date()
+  current = None
+  for name, label, start_hour, end_hour in BONUS_DAILY:
+    start = datetime.combine(day, datetime.min.time(), BONUS_TZ).replace(hour=start_hour)
+    end_day = day if end_hour > start_hour else day + timedelta(days=1)
+    end = datetime.combine(end_day, datetime.min.time(), BONUS_TZ).replace(hour=end_hour)
+    if start <= now < end:
+      current = (name, label, start, end)
+      break
+  cards = []
+  for name, label, start_hour, end_hour in BONUS_DAILY:
+    start = datetime.combine(day, datetime.min.time(), BONUS_TZ).replace(hour=start_hour)
+    end_day = day if end_hour > start_hour else day + timedelta(days=1)
+    end = datetime.combine(end_day, datetime.min.time(), BONUS_TZ).replace(hour=end_hour)
+    if current and current[0] == name:
+      event_day = start.date().isoformat()
+      event_key = name + ':' + event_day
+      count = c.execute('SELECT COUNT(*) FROM bonus_claims WHERE bonus_key=%s', (event_key,)).fetchone()[0]
+      own = c.execute('SELECT 1 FROM bonus_claims WHERE uid=%s AND bonus_key=%s', (u['uid'], event_key)).fetchone()
+      status = 'claimed' if own else ('full' if count >= BONUS_LIMIT else 'open')
+      remain = max(0, int((end-now).total_seconds()))
+    else:
+      status, count, remain = 'closed', 0, max(0, int((start-now).total_seconds())) if start > now else 0
+      event_key = name + ':' + start.date().isoformat()
+    cards.append({'id':name,'label':label,'key':event_key,'reward':BONUS_REWARD,'count':count,'limit':BONUS_LIMIT,'status':status,'remaining_seconds':remain,'starts_at':start.isoformat(),'ends_at':end.isoformat()})
+  rounds = int(u.get('matches_played') or 0)
+  lifetime_key = 'ten_rounds'
+  done = c.execute('SELECT 1 FROM bonus_claims WHERE uid=%s AND bonus_key=%s', (u['uid'], lifetime_key)).fetchone()
+  cards.append({'id':'ten_rounds','label':'የ10 ዙር ተጫዋች ቦነስ','reward':BONUS_REWARD,'progress':min(rounds,10),'target':10,'status':'claimed' if done else ('open' if rounds >= 10 else 'locked')})
+  return {'daily':cards,'timezone':'Africa/Addis_Ababa'}
+
+@app.post('/api/claim_bonus')
+async def api_claim_bonus(req: Request, x_tg_init_data: str = Header(default='')):
+  u = auth_user(x_tg_init_data)
+  try:
+    body = await req.json()
+    bonus_id = str(body.get('bonus_id','')).strip()
+  except Exception:
+    raise HTTPException(400, 'የቦነስ ጥያቄው ትክክል አይደለም።')
+  if bonus_id not in ('morning','midday','evening','ten_rounds'):
+    raise HTTPException(400, 'የቦነሱ አይነት አይታወቅም።')
+  with get_db() as c:
+    c.execute('BEGIN')
+    c.execute('SELECT pg_advisory_xact_lock(hashtext(%s))', ('dalol_bonus_' + bonus_id,))
+    now = datetime.now(BONUS_TZ)
+    if bonus_id == 'ten_rounds':
+      row = c.execute('SELECT matches_played FROM users WHERE uid=%s', (u['uid'],)).fetchone()
+      if not row or int(row['matches_played'] or 0) < 10:
+        raise HTTPException(400, 'ቦነሱን ለመውሰድ 10 ዙር መጫወት አለብዎት።')
+      bonus_key = 'ten_rounds'
+    else:
+      session = next((x for x in BONUS_DAILY if x[0] == bonus_id), None)
+      if not session:
+        raise HTTPException(400, 'የቦነስ ሰዓቱ አልደረሰም።')
+      _, _, start_hour, end_hour = session
+      today = now.date()
+      start = datetime.combine(today, datetime.min.time(), BONUS_TZ).replace(hour=start_hour)
+      end_day = today if end_hour > start_hour else today + timedelta(days=1)
+      end = datetime.combine(end_day, datetime.min.time(), BONUS_TZ).replace(hour=end_hour)
+      if not (start <= now < end):
+        raise HTTPException(400, 'የቦነሱ ጊዜ አልደረሰም ወይም አልፏል።')
+      bonus_key = bonus_id + ':' + start.date().isoformat()
+      count = c.execute('SELECT COUNT(*) FROM bonus_claims WHERE bonus_key=%s', (bonus_key,)).fetchone()[0]
+      if count >= BONUS_LIMIT:
+        raise HTTPException(409, 'ይህ ቦነስ በ100 ተጫዋቾች ተወስዷል።')
+    already = c.execute('SELECT 1 FROM bonus_claims WHERE uid=%s AND bonus_key=%s', (u['uid'], bonus_key)).fetchone()
+    if already:
+      raise HTTPException(409, 'ይህን ቦነስ ቀድሞ ወስደዋል።')
+    c.execute('INSERT INTO bonus_claims(uid,bonus_key,amount,claimed_at) VALUES(%s,%s,%s,%s)', (u['uid'], bonus_key, BONUS_REWARD, int(time.time())))
+    c.execute('UPDATE users SET play_wallet=play_wallet+%s WHERE uid=%s', (BONUS_REWARD, u['uid']))
+    title = 'የ10 ዙር ቦነስ' if bonus_id == 'ten_rounds' else 'የ' + {'morning':'ጠዋት','midday':'ቀትር','evening':'ማታ'}[bonus_id] + ' ቦነስ'
+    add_tx(c, u['uid'], '🎁', title, BONUS_REWARD)
+  return {'ok':True,'amount':BONUS_REWARD,'message':'ቦነሱ ወደ Play Wallet ተጨምሯል!'}
+
 @app.get('/api/state')
 def api_state(stake: int = 10, x_tg_init_data: str = Header(default='')):
   u = auth_user(x_tg_init_data)
@@ -536,9 +628,10 @@ def api_state(stake: int = 10, x_tg_init_data: str = Header(default='')):
     top = [dict(x) for x in c.execute('SELECT name,total_won FROM users WHERE total_won>0 ORDER BY total_won DESC LIMIT 10').fetchall()]
     pending_invites = c.execute('SELECT COUNT(*) FROM users WHERE referred_by=%s', (u['uid'],)).fetchone()[0]
     earned_bonus = c.execute("SELECT COALESCE(SUM(amount),0) FROM transactions WHERE uid=%s AND title='የግብዣ ሽልማት'", (u['uid'],)).fetchone()[0]
+  bonus_data = get_bonus_state(c, u)
   return {'user': {'uid': u['uid'], 'name': u['name'], 'play_wallet': round(u['play_wallet'],2), 'win_wallet': round(u['win_wallet'],2), 'matches_played': u['matches_played'], 'wins': u['wins']},
           'config': {'telebirr_name': TB_NAME, 'telebirr_phone': TB_PHONE, 'cbe_name': CB_NAME, 'cbe_phone': CB_PHONE, 'support': SUPPORT}, 'room': snap, 'history': txs, 'rank': top,
-          'bonus': {'reward_per_invite': 15, 'pending_invites': pending_invites, 'earned_total': round(float(earned_bonus or 0),2), 'bot_username': BOT_USERNAME}}
+          'bonus': {'reward_per_invite': 15, 'pending_invites': pending_invites, 'earned_total': round(float(earned_bonus or 0),2), 'bot_username': BOT_USERNAME, **bonus_data}}
 
 @app.post('/api/buy_card')
 async def api_buy(req: Request, x_tg_init_data: str = Header(default='')):
