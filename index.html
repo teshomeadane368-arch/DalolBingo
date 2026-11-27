@@ -74,9 +74,14 @@ body.light .status-banner{color:#1d4ed8}
 .mcell{aspect-ratio:1;border-radius:3px;background:var(--card2);display:flex;align-items:center;justify-content:center;font-size:8.5px;font-weight:700}
 .mcell.fr{background:#2563eb;color:#fff}
 .playlay{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,.95fr);align-items:start;gap:8px}
-.playlay>.mstr{min-width:0;position:sticky;top:58px}
+.playlay>.prevrow{grid-column:1/-1;display:flex;flex-direction:row;align-items:center;gap:8px;width:100%;min-width:0;padding:7px 8px;border:1px solid var(--bd);border-radius:12px;background:linear-gradient(90deg,var(--card),var(--card2));box-shadow:var(--sh)}
+.playlay>.prevrow .prevtag{flex:0 0 auto;width:auto;text-align:left;font-size:9px;white-space:nowrap}
+.playlay>.prevrow .pstack{display:flex;flex-direction:row;flex-wrap:nowrap;justify-content:flex-start;gap:5px;min-width:0;overflow-x:auto;overflow-y:hidden;padding:2px 1px 5px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.playlay>.prevrow .pstack::-webkit-scrollbar{display:none}
+.playlay>.prevrow .pball{flex:0 0 auto;min-width:37px;height:29px;padding:0 6px;font-size:9px}
+.playlay>.mstr{min-width:0;position:static}
 .playlay>.pright{min-width:0;gap:8px}
-.playlay .cstage{padding:8px 6px;gap:7px}
+.playlay .cstage{padding:8px 6px;gap:7px;margin-bottom:7px}
 .playlay .ball{width:76px;height:76px;font-size:20px}
 .playlay .prevrow{gap:4px}
 .playlay .prevtag{width:100%;text-align:center;font-size:8px}
@@ -275,15 +280,13 @@ body.light .status-banner{color:#1d4ed8}
         <div class="sbox"><div class="slbl">CALLS</div><div id="pCal" class="sval">0</div></div>
       </div>
       <div class="playlay">
+        <div class="prevrow"><span class="prevtag">PREVIOUS CALLS</span><div id="prvBalls" class="pstack"></div></div>
         <div class="mstr">
+          <div class="cstage"><div class="cbox"><div class="sttl">NOW CALLING</div><div id="curBall" class="ball bW">--</div></div></div>
           <div class="bhdr"><div class="ch cB">B</div><div class="ch cI">I</div><div class="ch cN">N</div><div class="ch cG">G</div><div class="ch cO">O</div></div>
           <div id="mstGrid" class="mstgrid"></div>
         </div>
         <div class="pright">
-          <div class="cstage">
-            <div class="prevrow"><span class="prevtag">PREVIOUS CALLS</span><div id="prvBalls" class="pstack"></div></div>
-            <div class="cbox"><div class="sttl">NOW CALLING</div><div id="curBall" class="ball bW">--</div></div>
-          </div>
           <div id="actCards" class="acards"></div>
         </div>
       </div>
@@ -588,7 +591,7 @@ function renderState(d) {
       cb.textContent = '--';
       lastAnimatedCall = null;
     }
-    document.getElementById('prvBalls').innerHTML = r.called.slice(1, 6).map(function(p, idx) {
+    document.getElementById('prvBalls').innerHTML = r.called.slice(1).map(function(p, idx) {
       var enter = isNewCall && idx === 0 ? ' prev-in' : '';
       return '<div class="pball b' + getLtr(p) + enter + '">' + getLtr(p) + '-' + p + '</div>';
     }).join('');
