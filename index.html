@@ -304,6 +304,7 @@ body.light .status-banner{color:#1d4ed8}
     <div class="wttl">🏆 BINGO! 🏆</div>
     <div id="wName" class="wnm">👑 Winner</div>
     <div id="wPrz" class="wprz">0 ብር</div>
+    <div id="wDer" style="margin:8px 0 14px;color:#fbbf24;font-size:15px;font-weight:800">DERASH: 0 ብር</div>
     <div class="wbox">
       <div id="wLbl" style="font-size:12px;font-weight:800;color:#fbbf24">CARD</div>
       <div id="wGrd" class="wgrd"></div>
@@ -561,7 +562,8 @@ function renderState(d) {
         playVoice('bingo', 'Bingo!', 880);
       }
       document.getElementById('wName').textContent = '👑 ' + w.name + ' #' + w.card_no;
-      document.getElementById('wPrz').textContent = w.prize + ' ብር';
+      document.getElementById('wPrz').textContent = 'WIN: ' + w.prize + ' ብር';
+      document.getElementById('wDer').textContent = 'DERASH: ' + r.derash + ' ብር';
       document.getElementById('wLbl').textContent = w.name + ' (CARD #' + w.card_no + ')';
       document.getElementById('wGrd').innerHTML = w.grid.map(function(v, idx) {
         var c = w.win_line.indexOf(idx) > -1 ? 'wl' : (v === 'FREE' || calMap[v]) ? 'cal' : '';
