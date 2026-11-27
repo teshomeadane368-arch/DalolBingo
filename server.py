@@ -117,18 +117,50 @@ WIN_LINES = [[0,1,2,3,4],[5,6,7,8,9],[10,11,12,13,14],[15,16,17,18,19],[20,21,22
              [0,5,10,15,20],[1,6,11,16,21],[2,7,12,17,22],[3,8,13,18,23],[4,9,14,19,24],
              [0,6,12,18,24],[4,8,12,16,20],[0,4,20,24]]
 check_win = lambda g, cs: next((ln for ln in WIN_LINES if all(g[i] == 'FREE' or g[i] in cs for i in ln)), None)
+TEST_BOTS_ENABLED = os.environ.get('TEST_BOTS_ENABLED', 'true').strip().lower() in ('1', 'true', 'yes', 'on')
+BOT_NAMES = [
+  'Abebe K.', 'Hana M.', 'Dawit T.', 'Mimi E.', 'Liya G.', 'Kebede A.',
+  'Selam B.', 'Biruk D.', 'Meron T.', 'Nahom K.', 'Rahel M.', 'Yonas G.',
+  'Tigist A.', 'Fikru B.', 'Sami H.', 'Mekdes T.', 'Henok D.', 'Eden K.',
+  'Solomon M.', 'Betty A.', 'Daniel G.', 'Marta S.', 'Natnael B.', 'Almaz K.',
+  'Bereket T.', 'Hirut D.', 'Abel M.', 'Mahi A.', 'Robel G.', 'Sara B.',
+  'Yared K.', 'Genet T.', 'Mulu D.', 'Fitsum A.', 'Elsa M.', 'Kaleb S.',
+  'Aster G.', 'Tewodros B.', 'Rahel D.', 'Nardos K.'
+]
 mk_room = lambda s: {'stake': s, 'phase': 'WAITING', 'countdown': CD_SEC, 'cards': {}, 'called': [], 'deck': [], 'tick': time.time(), 'winner': None, 'win_until': 0.0}
 rooms = {10: mk_room(10), 20: mk_room(20), 50: mk_room(50)}
 n_players = lambda r: len({v['uid'] for v in r['cards'].values()})
-derash = lambda r: round(len(r['cards']) * r['stake'] * (1.0 - HOUSE_CUT), 2)
+human_cards = lambda r: sum(1 for v in r['cards'].values() if not v.get('is_bot'))
+derash = lambda r: round(human_cards(r) * r['stake'] * (1.0 - HOUSE_CUT), 2)
+
+def add_test_bots(r):
+  if not TEST_BOTS_ENABLED or any(v.get('is_bot') for v in r['cards'].values()):
+    return
+  available = [n for n in range(1, 401) if n not in r['cards']]
+  count = random.randint(30, 40)
+  random.SystemRandom().shuffle(available)
+  names = random.sample(BOT_NAMES, min(count, len(BOT_NAMES)))
+  for cno, name in zip(available[:len(names)], names):
+    r['cards'][cno] = {'uid': -(100000 + cno), 'name': name, 'grid': gen_card(cno), 'is_bot': True}
+
+def bot_winner(r):
+  called = set(r['called'])
+  for cno, info in r['cards'].items():
+    if info.get('is_bot'):
+      line = check_win(info['grid'], called)
+      if line:
+        return cno, info, line
+  return None
 
 def finish_round(r, uid, name, cno, wl):
-  prize = derash(r)
-  comm = round(len(r['cards']) * r['stake'] - prize, 2)
-  with get_db() as c:
-    c.execute('UPDATE users SET win_wallet=win_wallet+%s, wins=wins+1, total_won=total_won+%s WHERE uid=%s', (prize, prize, uid))
-    add_tx(c, uid, '🏆', f'BINGO አሸነፉ! (Card #{cno})', prize)
-    c.execute('UPDATE house_stats SET total_commission=total_commission+%s, total_rounds=total_rounds+1 WHERE id=1', (comm,))
+  is_bot = uid < 0
+  prize = 0.0 if is_bot else derash(r)
+  if not is_bot:
+    comm = round(human_cards(r) * r['stake'] - prize, 2)
+    with get_db() as c:
+      c.execute('UPDATE users SET win_wallet=win_wallet+%s, wins=wins+1, total_won=total_won+%s WHERE uid=%s', (prize, prize, uid))
+      add_tx(c, uid, '🏆', f'BINGO አሸነፉ! (Card #{cno})', prize)
+      c.execute('UPDATE house_stats SET total_commission=total_commission+%s, total_rounds=total_rounds+1 WHERE id=1', (comm,))
   r['phase'], r['win_until'] = 'WINNER', time.time() + WIN_SEC
   r['winner'] = {'uid': uid, 'name': name, 'card_no': cno, 'prize': prize, 'grid': r['cards'][cno]['grid'], 'win_line': wl}
 
@@ -155,7 +187,12 @@ def game_loop():
                   c.execute('UPDATE users SET matches_played=matches_played+1 WHERE uid=%s', (uid,))
         elif r['phase'] == 'PLAYING' and now - r['tick'] >= CALL_SEC:
           r['tick'] = now
-          if r['deck']: r['called'].insert(0, r['deck'].pop())
+          if r['deck']:
+            r['called'].insert(0, r['deck'].pop())
+            bw = bot_winner(r)
+            if bw:
+              cno, info, wl = bw
+              finish_round(r, info['uid'], info['name'], cno, wl)
           else:
             cs, won = set(r['called']), False
             for cno, info in r['cards'].items():
@@ -508,7 +545,8 @@ async def api_buy(req: Request, x_tg_init_data: str = Header(default='')):
       wallet = c.execute('SELECT play_wallet FROM users WHERE uid=%s', (u['uid'],)).fetchone()
       if not wallet or wallet['play_wallet'] < st: raise HTTPException(400, 'በቂ Play Wallet የለዎትም! ገቢ ያድርጉ።')
       c.execute('UPDATE users SET play_wallet=play_wallet-%s WHERE uid=%s', (st, u['uid'])); add_tx(c, u['uid'], '🎴', f'ካርድ #{cno} ({st} ብር)', -st)
-    r['cards'][cno] = {'uid': u['uid'], 'name': u['name'], 'grid': gen_card(cno)}
+    r['cards'][cno] = {'uid': u['uid'], 'name': u['name'], 'grid': gen_card(cno), 'is_bot': False}
+    add_test_bots(r)
     return {'ok': True, 'action': 'bought'}
 
 @app.post('/api/claim_bingo')
