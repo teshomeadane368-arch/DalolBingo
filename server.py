@@ -555,13 +555,12 @@ def get_bonus_state(c, u):
     count = c.execute('SELECT COUNT(*) FROM bonus_claims WHERE bonus_key=%s', (event_key,)).fetchone()[0]
     own = c.execute('SELECT 1 FROM bonus_claims WHERE uid=%s AND bonus_key=%s', (u['uid'], event_key)).fetchone()
     if current and current[0] == name:
-      status = 'claimed' if own else ('full' if count >= BONUS_LIMIT else 'open')
+      status = 'claimed' if own else ('full' if count >= BONUS_LIMIT else ('locked' if rounds < 10 else 'open'))
       remain = max(0, int((end-now).total_seconds()))
     else:
-      status = 'claimed' if own else ('full' if count >= BONUS_LIMIT else 'closed')
+      status = 'claimed' if own else ('full' if count >= BONUS_LIMIT else ('locked' if rounds < 10 else 'closed'))
       remain = max(0, int((start-now).total_seconds())) if start > now else 0
     cards.append({'id':name,'label':label,'key':event_key,'reward':BONUS_REWARD,'count':count,'limit':BONUS_LIMIT,'status':status,'remaining_seconds':remain,'starts_at':start.isoformat(),'ends_at':end.isoformat()})
-  rounds = int(u.get('matches_played') or 0)
   lifetime_key = 'ten_rounds'
   done = c.execute('SELECT 1 FROM bonus_claims WHERE uid=%s AND bonus_key=%s', (u['uid'], lifetime_key)).fetchone()
   cards.append({'id':'ten_rounds','label':'የ10 ዙር ተጫዋች ቦነስ','reward':BONUS_REWARD,'progress':min(rounds,10),'target':10,'status':'claimed' if done else ('open' if rounds >= 10 else 'locked')})
@@ -581,6 +580,9 @@ async def api_claim_bonus(req: Request, x_tg_init_data: str = Header(default='')
     c.execute('BEGIN')
     c.execute('SELECT pg_advisory_xact_lock(hashtext(%s))', ('dalol_bonus_' + bonus_id,))
     now = datetime.now(BONUS_TZ)
+    eligibility = c.execute('SELECT matches_played FROM users WHERE uid=%s', (u['uid'],)).fetchone()
+    if not eligibility or int(eligibility['matches_played'] or 0) < 10:
+      raise HTTPException(400, 'ማንኛውንም ቦነስ ለመውሰድ 10 ዙር መጫወት አለብዎት።')
     if bonus_id == 'ten_rounds':
       row = c.execute('SELECT matches_played FROM users WHERE uid=%s', (u['uid'],)).fetchone()
       if not row or int(row['matches_played'] or 0) < 10:
