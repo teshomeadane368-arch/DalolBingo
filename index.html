@@ -63,6 +63,9 @@ body.light .status-banner{color:#1d4ed8}
 .gnum{aspect-ratio:1/.9;border-radius:8px;background:var(--card2);border:1px solid var(--bd);display:flex;align-items:center;justify-content:center;font-size:11.5px;font-weight:700;cursor:pointer}
 .gnum.taken{background:rgba(239,68,68,.18);border-color:rgba(239,68,68,.4);color:#fca5a5}
 .gnum.sel{background:var(--ggrad);border-color:#fde68a;color:#090d16;font-weight:800;box-shadow:0 0 12px rgba(245,158,11,.55)}
+.gnum.pending{position:relative;transform:scale(.93);border-color:var(--gold2);box-shadow:0 0 0 2px rgba(245,158,11,.2),0 0 16px rgba(245,158,11,.42);animation:cardTap .42s ease-in-out infinite alternate;pointer-events:none}
+@keyframes cardTap{from{filter:brightness(1)}to{filter:brightness(1.28)}}
+@media(prefers-reduced-motion:reduce){.gnum.pending{animation:none}}
 .pstrip{display:grid;grid-template-columns:repeat(auto-fit,minmax(105px,1fr));gap:7px}
 .mboard{background:var(--card);border:1.5px solid var(--bdg);border-radius:11px;padding:5px;box-shadow:var(--sh)}
 .mbh{display:flex;align-items:center;justify-content:space-between;background:var(--ggrad);color:#090d16;border-radius:6px;padding:2px 6px;font-size:9.5px;font-weight:800;margin-bottom:4px}
@@ -531,7 +534,7 @@ function renderState(d) {
     var gh = '';
     for (var i = 1; i <= 400; i++) {
       var cls = myMap[i] ? 'sel' : (tkMap[i] ? 'taken' : '');
-      gh += '<div class="gnum ' + cls + '" onclick="buyCard(' + i + ')">' + i + '</div>';
+      gh += '<div class="gnum ' + cls + '" data-card="' + i + '" onclick="buyCard(' + i + ')">' + i + '</div>';
     }
     document.getElementById('selGrid').innerHTML = gh;
 
@@ -651,6 +654,7 @@ function renderState(d) {
 }
 
 async function pollState() {
+  if (busy) return;
   if (!initData) {
     document.getElementById('appRoot').style.display = 'none';
     document.getElementById('authGuard').style.display = 'block';
@@ -664,15 +668,24 @@ async function pollState() {
 
 async function buyCard(no) {
   if (busy) return;
+  var cardEl = document.querySelector('.gnum[data-card="' + no + '"]');
+  if (cardEl) {
+    cardEl.classList.add('pending');
+    cardEl.setAttribute('aria-busy', 'true');
+  }
   busy = true;
   ensureAudioUnlocked();
   try {
     var res = await apiReq('/api/buy_card', 'POST', { stake: stake, card_no: no });
     beep(res.action === 'bought' ? 680 : 400, 0.08);
     toast(res.action === 'bought' ? '✅ ካርድ #' + no + ' ተገዝቷል!' : '↩️ ካርድ #' + no + ' ተሰርዟል፤ ብሩ ተመልሷል።');
+    busy = false;
     await pollState();
-  } catch (e) { toast('❌ ' + e.message); }
-  busy = false;
+  } catch (e) {
+    busy = false;
+    toast('❌ ' + e.message);
+    await pollState();
+  }
 }
 
 async function quickPick() {
