@@ -102,6 +102,10 @@ body.light .status-banner{color:#1d4ed8}
 @keyframes winGlow{from{box-shadow:0 0 8px rgba(245,158,11,.2)}to{box-shadow:0 0 17px rgba(245,158,11,.52)}}
 @media(hover:hover){.playlay .pcard:hover{transform:translateY(-2px);border-color:var(--bdg)}.playlay .prevrow .pball:hover{transform:translateY(-2px);filter:brightness(1.15)}}
 @media(prefers-reduced-motion:reduce){.playlay .prevrow .pball.prev-in,.playlay .pcard.win{animation:none}.playlay .mn,.playlay .pcard,.playlay .prevrow .pball{transition:none}}
+.playlay>.prevrow{display:flex;flex-direction:row;align-items:center;justify-content:flex-start;gap:8px;width:100%;padding:7px 8px}
+.playlay>.prevrow .prevtag{flex:0 0 auto;width:auto;text-align:left;white-space:nowrap}
+.playlay>.prevrow .pstack{display:flex;flex-direction:row;flex-wrap:nowrap;justify-content:flex-start;gap:5px;width:auto;min-width:0;overflow-x:auto;overflow-y:hidden}
+
 
 .playlay .mstgrid{gap:2px}
 .playlay .mn{font-size:10px;padding:5px 0}
