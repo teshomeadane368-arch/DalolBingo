@@ -131,7 +131,8 @@ mk_room = lambda s: {'stake': s, 'phase': 'WAITING', 'countdown': CD_SEC, 'cards
 rooms = {10: mk_room(10), 20: mk_room(20), 50: mk_room(50)}
 n_players = lambda r: len({v['uid'] for v in r['cards'].values()})
 human_cards = lambda r: sum(1 for v in r['cards'].values() if not v.get('is_bot'))
-derash = lambda r: round(human_cards(r) * r['stake'] * (1.0 - HOUSE_CUT), 2)
+total_paid_cards = lambda r: len(r['cards'])
+derash = lambda r: round(total_paid_cards(r) * r['stake'] * (1.0 - HOUSE_CUT), 2)
 
 def add_one_test_bot(r):
   if not TEST_BOTS_ENABLED or sum(1 for v in r['cards'].values() if v.get('is_bot')) >= r['bot_target']:
@@ -144,7 +145,7 @@ def add_one_test_bot(r):
     return
   cno = random.choice(available)
   name = random.choice(names)
-  r['cards'][cno] = {'uid': -(100000 + cno), 'name': name, 'grid': gen_card(cno), 'is_bot': True}
+  bot_credits = random.randint(500, 2000)\n  bot_credits -= r['stake']  # Simulated bot wallet pays the same card fee.\n  r['cards'][cno] = {'uid': -(100000 + cno), 'name': name, 'grid': gen_card(cno), 'is_bot': True, 'credits_paid': r['stake'], 'simulated_credits_left': bot_credits}
   r.setdefault('bot_names', []).append(name)
   r['next_bot_at'] = time.time() + random.uniform(0.08, 0.25)
 
@@ -161,7 +162,7 @@ def finish_round(r, uid, name, cno, wl):
   is_bot = uid < 0
   prize = derash(r)  # Bots display the simulated round win; only human winners receive wallet credit.
   if not is_bot:
-    comm = round(human_cards(r) * r['stake'] - prize, 2)
+    comm = round(total_paid_cards(r) * r['stake'] - prize, 2)
     with get_db() as c:
       c.execute('UPDATE users SET win_wallet=win_wallet+%s, wins=wins+1, total_won=total_won+%s WHERE uid=%s', (prize, prize, uid))
       add_tx(c, uid, '🏆', f'BINGO አሸነፉ! (Card #{cno})', prize)
