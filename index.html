@@ -251,6 +251,7 @@ body.light .status-banner{color:#1d4ed8}
 body.light .bonus-card,body.light .bonus-stat{background:#fff}
 @media(max-width:350px){.bonus-steps{gap:3px}.bonus-step span{font-size:8px}.bonus-title{font-size:24px}}
 
+.bonus-cardlist{display:grid;gap:12px;margin:12px 0}.daily-bonus{position:relative;overflow:hidden;padding:15px;border-radius:18px;background:linear-gradient(145deg,var(--card),var(--card2));border:1px solid var(--bd);box-shadow:var(--sh)}.daily-bonus:before{content:"";position:absolute;inset:0 auto 0 0;width:4px;background:linear-gradient(#ec4899,#8b5cf6,#22d3ee)}.daily-bonus-top{display:flex;align-items:center;gap:10px}.daily-bonus-icon{width:43px;height:43px;border-radius:13px;display:grid;place-items:center;background:linear-gradient(135deg,#ec4899,#8b5cf6);font-size:22px}.daily-bonus-name{font-size:14px;font-weight:950}.daily-bonus-time{font-size:10px;color:var(--mut);margin-top:3px}.daily-bonus-prize{margin-left:auto;color:#20d9bd;font-size:19px;font-weight:950;white-space:nowrap}.daily-bonus-track{height:9px;background:rgba(148,163,184,.17);border-radius:20px;overflow:hidden;margin:14px 0 9px}.daily-bonus-fill{height:100%;border-radius:20px;background:linear-gradient(90deg,#d946ef,#8b5cf6,#22d3ee)}.daily-bonus-meta{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:11px;color:var(--mut);margin-bottom:11px}.daily-bonus-btn{width:100%;border:0;border-radius:11px;padding:12px 10px;font-weight:950;font-size:12px;background:linear-gradient(135deg,#0dba86,#0b8d68);color:#fff;box-shadow:0 4px 0 rgba(0,75,56,.45)}.daily-bonus-btn:disabled{opacity:.48;filter:saturate(.6);box-shadow:none}.daily-bonus-btn.claimed{background:linear-gradient(135deg,#64748b,#475569)}.daily-bonus-note{font-size:10px;color:var(--mut);line-height:1.55;margin-top:8px}.bonus-amharic-head{text-align:center;font-weight:950;font-size:19px;margin:5px 0 12px;color:var(--gold2)}
 </style>
 </head>
 <body>
@@ -352,40 +353,14 @@ body.light .bonus-card,body.light .bonus-stat{background:#fff}
   </section>
 
   <section id="tab-bonus" class="tab">
-    <div class="bonus-hero">
-      <div class="bonus-kicker">DALOL BINGO REWARDS</div>
-      <div class="bonus-title">Bonus Center 🎁</div>
-      <div class="bonus-sub">Invite friends, grow your Bingo circle, and earn bonus credits together.</div>
-      <div class="bonus-gift">🎁</div>
-    </div>
-    <div class="bonus-stats">
-      <div class="bonus-stat"><div class="bs-label">BONUS EARNED</div><div class="bs-value"><span id="bonusEarned">0.00</span> <small style="font-size:11px">ETB</small></div></div>
-      <div class="bonus-stat"><div class="bs-label">PENDING INVITES</div><div class="bs-value" id="bonusPending">0</div></div>
-    </div>
-    <div class="bonus-card">
-      <div class="bonus-card-head">
-        <div class="bonus-icon">👥</div>
-        <div><div class="bonus-card-title">Invite friends & earn</div><div class="bonus-card-desc">Your friend joins through your link and makes their first approved deposit.</div></div>
-        <div class="bonus-reward">+15 <small style="font-size:10px">ETB</small></div>
-      </div>
-      <div class="bonus-steps">
-        <div class="bonus-step"><b>1</b><span>Share your link</span></div>
-        <div class="bonus-step"><b>2</b><span>Friend joins</span></div>
-        <div class="bonus-step"><b>3</b><span>First deposit approved</span></div>
-        <div class="bonus-step"><b>4</b><span>Get 15 credits</span></div>
-      </div>
-      <div class="bonus-link"><span>🔗</span><input id="bonusInviteLink" readonly value="Loading your invite link..."><button class="cmini" onclick="copyBonusLink()">COPY</button></div>
-      <div class="bonus-actions">
-        <button class="bonus-btn primary" onclick="shareBonusLink()">↗ Invite Friends</button>
-        <button class="bonus-btn secondary" onclick="goTab('history')">🎁 Bonus History</button>
-      </div>
-      <div class="bonus-note">The 15 ETB reward is added to your Play Wallet after your invited friend's first deposit is approved. Each invited account can trigger this reward once.</div>
-    </div>
-    <div class="bonus-history-title">✨ How rewards work</div>
-    <div class="bonus-card">
-      <div class="bonus-card-title">A simple way to earn more</div>
-      <div class="bonus-card-desc">Share your personal invitation link with friends. When an invited player completes their first approved deposit, 15 ETB is credited to your Play Wallet. You can see the credit in your Wallet transaction history.</div>
-    </div>
+    <div class="bonus-hero"><div class="bonus-kicker">DALOL BINGO · የሽልማት ማዕከል</div><div class="bonus-title">የቦነስ ሽልማቶች 🎁</div><div class="bonus-sub">በየቀኑ የሚሰጡ ቦነሶችን ይውሰዱ፤ ተጨማሪ ክሬዲት ያግኙ!</div><div class="bonus-gift">🎁</div></div>
+    <div class="bonus-stats"><div class="bonus-stat"><div class="bs-label">ያገኙት የግብዣ ቦነስ</div><div class="bs-value"><span id="bonusEarned">0.00</span> <small style="font-size:11px">ብር</small></div></div><div class="bonus-stat"><div class="bs-label">የሚጠብቁ ግብዣዎች</div><div class="bs-value" id="bonusPending">0</div></div></div>
+    <div class="bonus-amharic-head">🌞 የዕለቱ ቦነሶች</div><div id="dailyBonusCards" class="bonus-cardlist"></div>
+    <div class="bonus-amharic-head">🎯 የጨዋታ ስኬት ቦነስ</div><div id="roundBonusCard"></div>
+    <div class="bonus-history-title">👥 የጓደኛ ግብዣ ሽልማት</div>
+    <div class="bonus-card"><div class="bonus-card-head"><div class="bonus-icon">👥</div><div><div class="bonus-card-title">ጓደኛዎን ይጋብዙ</div><div class="bonus-card-desc">የጋበዙት ጓደኛ ለመጀመሪያ ጊዜ ገንዘብ ካስገባና ከጸደቀ በኋላ ይሸለማሉ።</div></div><div class="bonus-reward">+15</div></div>
+    <div class="bonus-link"><span>🔗</span><input id="bonusInviteLink" readonly value="የግብዣ ሊንክ በመጫን ላይ..."><button class="cmini" onclick="copyBonusLink()">ቅዳ</button></div>
+    <div class="bonus-actions"><button class="bonus-btn primary" onclick="shareBonusLink()">↗ ጓደኛ ጋብዝ</button><button class="bonus-btn secondary" onclick="goTab('history')">🎁 የቦነስ ታሪክ</button></div><div class="bonus-note">የግብዣ ሽልማቱ ወደ Play Wallet ይጨመራል።</div></div>
   </section>
 
   <section id="tab-profile" class="tab">
@@ -707,7 +682,8 @@ function renderState(d) {
   document.getElementById('bonusPending').textContent = bonus.pending_invites || 0;
   var inviteUrl = bonus.bot_username ? 'https://t.me/' + bonus.bot_username + '?start=' + u.uid : '';
   var inviteInput = document.getElementById('bonusInviteLink');
-  if (inviteInput) inviteInput.value = inviteUrl || 'Invite link unavailable — bot username not set';
+  if (inviteInput) inviteInput.value = inviteUrl || 'የቦት ስም አልተዘጋጀም';
+  renderBonusCards(bonus);
 
   var hl = document.getElementById('hList');
   if (!d.history.length) {
@@ -877,6 +853,27 @@ function goTab(t) {
   document.getElementById('tab-' + t).classList.add('on');
   document.querySelector('.nbtn[data-t="' + t + '"]').classList.add('on');
 }
+function bonusClock(sec) {
+  sec=Math.max(0,Number(sec||0));var hh=Math.floor(sec/3600),mm=Math.floor((sec%3600)/60),ss=sec%60;
+  return [hh,mm,ss].map(function(v){return String(v).padStart(2,'0');}).join(':');
+}
+function renderBonusCards(bonus) {
+  var daily=bonus.daily||[],labels={morning:'የጠዋት ቦነስ',midday:'የቀትር ቦነስ',evening:'የማታ ቦነስ'},icons={morning:'🌅',midday:'☀️',evening:'🌙'},times={morning:'ጠዋት 8:00 – ከሰዓት 1:00',midday:'ከሰዓት 1:00 – 7:00',evening:'ማታ 7:00 – ጠዋት 8:00'};
+  var html=daily.filter(function(x){return x.id!=='ten_rounds';}).map(function(x){
+    var pct=Math.min(100,Math.round((x.count||0)*100/(x.limit||100))),active=x.status==='open',claimed=x.status==='claimed',full=x.status==='full';
+    var timer=active?'የሚቀረው ጊዜ '+bonusClock(x.remaining_seconds):(x.remaining_seconds>0?'እስኪከፈት የሚቀረው '+bonusClock(x.remaining_seconds):'የዛሬው ጊዜ ተዘግቷል');
+    var btn=claimed?'ቦነሱን ወስደዋል ✓':full?'100 ተጫዋቾች ወስደዋል':active?'50 ክሬዲት ውሰድ':'ገና አልተከፈተም';
+    var note=claimed?'ቦነሱን ቀድሞ ወስደዋል።':full?'የዛሬው ቦነስ ተሟልቷል።':active?'አሁን ቦነሱን መውሰድ ይችላሉ።':'በተመደበው ሰዓት ይከፈታል።';
+    return '<div class="daily-bonus"><div class="daily-bonus-top"><div class="daily-bonus-icon">'+icons[x.id]+'</div><div><div class="daily-bonus-name">'+labels[x.id]+'</div><div class="daily-bonus-time">'+times[x.id]+'</div></div><div class="daily-bonus-prize">50 <small style="font-size:10px">ክሬዲት</small></div></div><div class="daily-bonus-track"><div class="daily-bonus-fill" style="width:'+pct+'%"></div></div><div class="daily-bonus-meta"><span>👥 '+(x.count||0)+' / 100 ተጫዋቾች</span><span>⏱ '+timer+'</span></div><button class="daily-bonus-btn '+(claimed?'claimed':'')+'" '+(!active?'disabled':'')+' onclick="claimBonus(\''+x.id+'\')">'+btn+'</button><div class="daily-bonus-note">'+note+' በየቀኑ 100 የተለያዩ ተጫዋቾች ብቻ ይወስዳሉ።</div></div>';
+  }).join('');
+  document.getElementById('dailyBonusCards').innerHTML=html;
+  var r=daily.find(function(x){return x.id==='ten_rounds';});
+  if(r){var p=Math.min(100,Math.round((r.progress||0)*10)),done=r.status==='claimed',ready=r.status==='open';
+    document.getElementById('roundBonusCard').innerHTML='<div class="daily-bonus"><div class="daily-bonus-top"><div class="daily-bonus-icon">🏆</div><div><div class="daily-bonus-name">10 ዙር የመጫወት ቦነስ</div><div class="daily-bonus-time">10 ዙር ሲጫወቱ 50 ክሬዲት ያግኙ</div></div><div class="daily-bonus-prize">50 <small style="font-size:10px">ክሬዲት</small></div></div><div class="daily-bonus-track"><div class="daily-bonus-fill" style="width:'+p+'%"></div></div><div class="daily-bonus-meta"><span>🎮 '+(r.progress||0)+' / 10 ዙር</span><span>'+(done?'ተወስዷል':ready?'ዝግጁ ነው':'ቀሪ '+(10-(r.progress||0))+' ዙር')+'</span></div><button class="daily-bonus-btn '+(done?'claimed':'')+'" '+(!ready?'disabled':'')+' onclick="claimBonus(\'ten_rounds\')">'+(done?'ቦነሱን ወስደዋል ✓':ready?'50 ክሬዲት ውሰድ':'10 ዙር ይጫወቱ')+'</button></div>';
+  }
+}
+async function claimBonus(id){try{var b=await apiReq('/api/claim_bonus','POST',{bonus_id:id});toast(b.message||'ቦነሱ ተጨምሯል!');await pollState();}catch(e){toast(e.message||'ቦነሱን መውሰድ አልተቻለም');await pollState();}}
+
 function copyBonusLink() {
   var v = document.getElementById('bonusInviteLink').value;
   if (!v || v.indexOf('https://') !== 0) return toast('Invite link is not ready yet');
