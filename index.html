@@ -70,20 +70,27 @@ body.light .status-banner{color:#1d4ed8}
 .mgrid{display:grid;grid-template-columns:repeat(5,1fr);gap:2px}
 .mcell{aspect-ratio:1;border-radius:3px;background:var(--card2);display:flex;align-items:center;justify-content:center;font-size:8.5px;font-weight:700}
 .mcell.fr{background:#2563eb;color:#fff}
-.playlay{display:grid;grid-template-columns:38% 1fr;gap:9px;align-items:start}
-.mstr{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:6px 5px;box-shadow:var(--sh)}
-.bhdr{display:grid;grid-template-columns:repeat(5,1fr);gap:2px;margin-bottom:4px}
-.ch{text-align:center;font-size:10px;font-weight:800;padding:3px 0;border-radius:5px;color:#fff}
+.playlay{display:flex;flex-direction:column;gap:10px}
+.mstr{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:8px;box-shadow:var(--sh)}
+.bhdr{display:grid;grid-template-columns:repeat(5,1fr);gap:3px;margin-bottom:5px}
+.ch{text-align:center;font-size:11px;font-weight:900;padding:5px 0;border-radius:6px;color:#fff}
 .cB{background:#2563eb}.cI{background:#dc2626}.cN{background:#10b981}.cG{background:#d97706}.cO{background:#7c3aed}
-.mstgrid{display:grid;grid-template-columns:repeat(5,1fr);gap:2.5px}
-.mn{font-size:9.5px;font-weight:700;text-align:center;padding:3.5px 0;border-radius:4px;background:var(--card2);color:var(--mut)}
-.mn.cal{background:#2563eb;color:#fff;font-weight:800}
-.mn.lat{background:var(--ggrad);color:#090d16;box-shadow:0 0 9px rgba(251,191,36,.85)}
-.pright{display:flex;flex-direction:column;gap:9px;min-width:0}
-.cstage{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:10px;display:grid;grid-template-columns:1fr 54px;gap:8px;align-items:center;box-shadow:var(--sh)}
-.cbox{display:flex;flex-direction:column;align-items:center}
-.sttl{font-size:9.5px;font-weight:800;color:var(--mut);margin-bottom:6px}
-.ball{width:80px;height:80px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:900;color:#fff;border:2.5px solid rgba(255,255,255,.55);box-shadow:inset -5px -7px 14px rgba(0,0,0,.4),0 6px 18px rgba(0,0,0,.45)}
+.mstgrid{display:grid;grid-template-columns:repeat(5,1fr);gap:3px}
+.mn{font-size:11px;font-weight:750;text-align:center;padding:5px 0;border-radius:5px;background:var(--card2);color:var(--mut)}
+.mn.cal{background:#2563eb;color:#fff;font-weight:850}
+.mn.lat{background:var(--ggrad);color:#090d16;box-shadow:0 0 8px rgba(251,191,36,.7)}
+.pright{display:flex;flex-direction:column;gap:10px;min-width:0}
+.cstage{background:linear-gradient(145deg,var(--card),var(--card2));border:1px solid var(--bdg);border-radius:17px;padding:10px 12px 13px;display:flex;flex-direction:column;align-items:center;gap:9px;box-shadow:var(--sh)}
+.cbox{display:flex;flex-direction:column;align-items:center;gap:5px}
+.sttl{font-size:10px;font-weight:900;letter-spacing:1px;color:var(--mut);margin-bottom:0}
+.prevrow{display:flex;align-items:center;justify-content:center;gap:7px;flex-wrap:wrap;width:100%}
+.prevtag{font-size:9px;font-weight:900;color:var(--mut);letter-spacing:.7px;margin-right:2px}
+.ball{width:104px;height:104px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:27px;font-weight:950;color:#fff;border:3px solid rgba(255,255,255,.65);box-shadow:inset -5px -7px 14px rgba(0,0,0,.4),0 7px 22px rgba(0,0,0,.4);transform:translateZ(0)}
+.ball.pop{animation:callPop .38s cubic-bezier(.2,.8,.25,1)}
+@keyframes callPop{0%{transform:scale(.72);opacity:.55}65%{transform:scale(1.08);opacity:1}100%{transform:scale(1)}}
+.pstack{display:flex;align-items:center;justify-content:center;gap:6px;flex-wrap:wrap;width:100%}
+.pball{width:auto;min-width:43px;height:31px;padding:0 8px;border-radius:99px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:850;color:#fff;border:1px solid rgba(255,255,255,.35);box-shadow:0 2px 7px rgba(0,0,0,.18)}
+.acards{display:flex;flex-direction:column;gap:9px;max-height:400px;overflow-y:auto;overscroll-behavior:contain}
 .bB{background:radial-gradient(circle at 30% 28%,#60a5fa,#2563eb 65%,#1e3a8a)}
 .bI{background:radial-gradient(circle at 30% 28%,#f87171,#dc2626 65%,#7f1d1d)}
 .bN{background:radial-gradient(circle at 30% 28%,#34d399,#059669 65%,#064e3b)}
@@ -231,14 +238,14 @@ body.light .status-banner{color:#1d4ed8}
         <div class="sbox"><div class="slbl">CALLS</div><div id="pCal" class="sval">0</div></div>
       </div>
       <div class="playlay">
-        <div class="mstr">
-          <div class="bhdr"><div class="ch cB">B</div><div class="ch cI">I</div><div class="ch cN">N</div><div class="ch cG">G</div><div class="ch cO">O</div></div>
-          <div id="mstGrid" class="mstgrid"></div>
-        </div>
         <div class="pright">
           <div class="cstage">
-            <div class="cbox"><div class="sttl">CURRENT CALL</div><div id="curBall" class="ball bW">--</div></div>
-            <div class="pstack"><div class="sttl" style="margin-bottom:2px">PREV</div><div id="prvBalls"></div></div>
+            <div class="prevrow"><span class="prevtag">PREVIOUS CALLS</span><div id="prvBalls" class="pstack"></div></div>
+            <div class="cbox"><div class="sttl">NOW CALLING</div><div id="curBall" class="ball bW">--</div></div>
+          </div>
+          <div class="mstr">
+            <div class="bhdr"><div class="ch cB">B</div><div class="ch cI">I</div><div class="ch cN">N</div><div class="ch cG">G</div><div class="ch cO">O</div></div>
+            <div id="mstGrid" class="mstgrid"></div>
           </div>
           <div id="actCards" class="acards"></div>
         </div>
@@ -322,7 +329,7 @@ if (tg) {
 }
 
 var stake = 10, soundOn = true, autoMark = true;
-var lastCalledBall = null, lastWinnerCard = null, manualMarks = {};
+var lastCalledBall = null, lastAnimatedCall = null, lastWinnerCard = null, manualMarks = {};
 var latestState = null, busy = false, tTmr = null;
 var voiceAudio = new Audio(), actx = null;
 
@@ -531,11 +538,18 @@ function renderState(d) {
     if (cur) {
       cb.className = 'ball b' + getLtr(cur);
       cb.textContent = getLtr(cur) + '-' + cur;
+      if (cur !== lastAnimatedCall) {
+        lastAnimatedCall = cur;
+        cb.classList.remove('pop');
+        void cb.offsetWidth;
+        cb.classList.add('pop');
+      }
     } else {
       cb.className = 'ball bW';
       cb.textContent = '--';
+      lastAnimatedCall = null;
     }
-    document.getElementById('prvBalls').innerHTML = r.called.slice(1, 4).map(function(p) {
+    document.getElementById('prvBalls').innerHTML = r.called.slice(1, 6).map(function(p) {
       return '<div class="pball b' + getLtr(p) + '">' + getLtr(p) + '-' + p + '</div>';
     }).join('');
 
