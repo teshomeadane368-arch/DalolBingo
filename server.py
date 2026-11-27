@@ -127,7 +127,7 @@ BOT_NAMES = [
   'Yared K.', 'Genet T.', 'Mulu D.', 'Fitsum A.', 'Elsa M.', 'Kaleb S.',
   'Aster G.', 'Tewodros B.', 'Rahel D.', 'Nardos K.'
 ]
-mk_room = lambda s: {'stake': s, 'phase': 'WAITING', 'countdown': CD_SEC, 'cards': {}, 'called': [], 'deck': [], 'tick': time.time(), 'winner': None, 'win_until': 0.0, 'bot_target': random.randint(30, 40), 'bot_names': [], 'next_bot_at': time.time() + random.uniform(1.0, 3.0)}
+mk_room = lambda s: {'stake': s, 'phase': 'WAITING', 'countdown': CD_SEC, 'cards': {}, 'called': [], 'deck': [], 'tick': time.time(), 'winner': None, 'win_until': 0.0, 'bot_target': random.randint(30, 40), 'bot_names': [], 'next_bot_at': time.time() + random.uniform(0.5, 1.5)}
 rooms = {10: mk_room(10), 20: mk_room(20), 50: mk_room(50)}
 n_players = lambda r: len({v['uid'] for v in r['cards'].values()})
 human_cards = lambda r: sum(1 for v in r['cards'].values() if not v.get('is_bot'))
@@ -146,7 +146,7 @@ def add_one_test_bot(r):
   name = random.choice(names)
   r['cards'][cno] = {'uid': -(100000 + cno), 'name': name, 'grid': gen_card(cno), 'is_bot': True}
   r.setdefault('bot_names', []).append(name)
-  r['next_bot_at'] = time.time() + random.uniform(1.0, 3.5)
+  r['next_bot_at'] = time.time() + random.uniform(0.08, 0.25)
 
 def bot_winner(r):
   called = set(r['called'])
@@ -170,7 +170,7 @@ def finish_round(r, uid, name, cno, wl):
   r['winner'] = {'uid': uid, 'name': name, 'card_no': cno, 'prize': prize, 'grid': r['cards'][cno]['grid'], 'win_line': wl}
 
 def reset_room(r):
-  r.update({'phase': 'WAITING', 'countdown': CD_SEC, 'cards': {}, 'called': [], 'deck': [], 'winner': None, 'tick': time.time(), 'bot_target': random.randint(30, 40), 'bot_names': [], 'next_bot_at': time.time() + random.uniform(1.0, 3.0)})
+  r.update({'phase': 'WAITING', 'countdown': CD_SEC, 'cards': {}, 'called': [], 'deck': [], 'winner': None, 'tick': time.time(), 'bot_target': random.randint(30, 40), 'bot_names': [], 'next_bot_at': time.time() + random.uniform(0.5, 1.5)})
 
 def game_loop():
   while True:
@@ -210,7 +210,7 @@ def game_loop():
             if not won: reset_room(r)
         elif r['phase'] == 'WINNER' and now >= r['win_until']:
           reset_room(r)
-    time.sleep(0.35)
+    time.sleep(0.1)
 
 def auth_user(init_data: str):
   if not init_data or not TOKEN:
