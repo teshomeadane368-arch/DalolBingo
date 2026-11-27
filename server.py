@@ -159,7 +159,7 @@ def bot_winner(r):
 
 def finish_round(r, uid, name, cno, wl):
   is_bot = uid < 0
-  prize = 0.0 if is_bot else derash(r)
+  prize = derash(r)  # Bots display the simulated round win; only human winners receive wallet credit.
   if not is_bot:
     comm = round(human_cards(r) * r['stake'] - prize, 2)
     with get_db() as c:
