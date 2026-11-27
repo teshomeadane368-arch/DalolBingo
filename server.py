@@ -532,7 +532,7 @@ BONUS_DAILY = [
   ('midday', 'የቀን መካከል ቦነስ', 13, 19),
   ('evening', 'የማታ ቦነስ', 19, 8),
 ]
-BONUS_REWARD = 50
+BONUS_REWARD = 10
 BONUS_LIMIT = 100
 
 def get_bonus_state(c, u):
