@@ -178,16 +178,15 @@ def game_loop():
     with room_lock:
       for r in rooms.values():
         pc = n_players(r)
-        if r['phase'] == 'WAITING':
+        if r['phase'] in ('WAITING', 'COUNTDOWN'):
           if TEST_BOTS_ENABLED and now >= r.get('next_bot_at', now + 2):
             add_one_test_bot(r)
           bot_total = sum(1 for v in r['cards'].values() if v.get('is_bot'))
-          bots_ready = (not TEST_BOTS_ENABLED) or bot_total >= r.get('bot_target', 30)
-          if bots_ready and pc >= MIN_PLAYERS:
+          if r['phase'] == 'WAITING' and ((TEST_BOTS_ENABLED and bot_total >= 1) or pc >= MIN_PLAYERS):
             r.update({'phase': 'COUNTDOWN', 'countdown': CD_SEC, 'tick': now})
-        elif r['phase'] == 'COUNTDOWN':
-          if pc < MIN_PLAYERS: r.update({'phase': 'WAITING', 'countdown': CD_SEC})
-          elif now - r['tick'] >= 1.0:
+          elif r['phase'] == 'COUNTDOWN' and not r['cards']:
+            r.update({'phase': 'WAITING', 'countdown': CD_SEC})
+          elif r['phase'] == 'COUNTDOWN' and now - r['tick'] >= 1.0:
             r['tick'], r['countdown'] = now, r['countdown'] - 1
             if r['countdown'] <= 0:
               r.update({'phase': 'PLAYING', 'called': [], 'deck': list(range(1, 76)), 'tick': now})
