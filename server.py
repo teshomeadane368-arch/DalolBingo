@@ -627,7 +627,7 @@ def api_state(stake: int = 10, x_tg_init_data: str = Header(default='')):
     top = [dict(x) for x in c.execute('SELECT name,total_won FROM users WHERE total_won>0 ORDER BY total_won DESC LIMIT 10').fetchall()]
     pending_invites = c.execute('SELECT COUNT(*) FROM users WHERE referred_by=%s', (u['uid'],)).fetchone()[0]
     earned_bonus = c.execute("SELECT COALESCE(SUM(amount),0) FROM transactions WHERE uid=%s AND title='የግብዣ ሽልማት'", (u['uid'],)).fetchone()[0]
-  bonus_data = get_bonus_state(c, u)
+    bonus_data = get_bonus_state(c, u)
   return {'user': {'uid': u['uid'], 'name': u['name'], 'play_wallet': round(u['play_wallet'],2), 'win_wallet': round(u['win_wallet'],2), 'matches_played': u['matches_played'], 'wins': u['wins']},
           'config': {'telebirr_name': TB_NAME, 'telebirr_phone': TB_PHONE, 'cbe_name': CB_NAME, 'cbe_phone': CB_PHONE, 'support': SUPPORT}, 'room': snap, 'history': txs, 'rank': top,
           'bonus': {'reward_per_invite': 15, 'pending_invites': pending_invites, 'earned_total': round(float(earned_bonus or 0),2), 'bot_username': BOT_USERNAME, **bonus_data}}
